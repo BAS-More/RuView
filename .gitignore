@@ -248,5 +248,6 @@ v1/src/sensing/mac_wifi
 **/node_modules/
 
 # Local build scripts
-firmware/esp32-csi-node/build_firmware.batdata/
+firmware/esp32-csi-node/build_firmware.bat
+data/processed/
 models/
