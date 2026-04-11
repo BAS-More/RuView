@@ -59,6 +59,14 @@ def export_to_onnx(
     # Dummy input for tracing
     dummy_input = torch.randn(1, 64, 8, 8, device=device)
 
+    # Workaround: PyTorch ONNX exporter prints emoji checkmarks that crash
+    # on Windows cp1252 consoles. Force UTF-8 for stdout/stderr.
+    import sys
+    if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
     # Export
     os.makedirs(os.path.dirname(output_path) or '.', exist_ok=True)
     torch.onnx.export(
