@@ -72,6 +72,8 @@ jobs:
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
 
     - name: Cache cargo
       uses: actions/cache@v4
@@ -83,6 +85,15 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('rust-port/wifi-densepose-rs/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
+
+    - name: Check Rust formatting
+      working-directory: rust-port/wifi-densepose-rs
+      run: cargo fmt --all -- --check
+
+    - name: Run Clippy lints
+      working-directory: rust-port/wifi-densepose-rs
+      run: cargo clippy --workspace -- -W clippy::all
+      continue-on-error: true
 
     - name: Run Rust tests
       working-directory: rust-port/wifi-densepose-rs
