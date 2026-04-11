@@ -1658,8 +1658,9 @@ async fn windows_wifi_task(state: SharedState, tick_ms: u64) {
 
         // Populate persons from the sensing update (Kalman-smoothed via tracker).
         let raw_persons = derive_pose_from_sensing(&update);
-        let tracked = tracker_bridge::tracker_update(
-            &mut s.pose_tracker, &mut s.last_tracker_instant, raw_persons,
+        let dt = tracker_bridge::advance_dt(&mut s.last_tracker_instant);
+        let tracked = tracker_bridge::tracker_update_with_dt(
+            &mut s.pose_tracker, dt, raw_persons,
         );
         if !tracked.is_empty() {
             update.persons = Some(tracked);
@@ -1794,8 +1795,9 @@ async fn windows_wifi_fallback_tick(state: &SharedState, seq: u32) {
     };
 
     let raw_persons = derive_pose_from_sensing(&update);
-    let tracked = tracker_bridge::tracker_update(
-        &mut s.pose_tracker, &mut s.last_tracker_instant, raw_persons,
+    let dt = tracker_bridge::advance_dt(&mut s.last_tracker_instant);
+    let tracked = tracker_bridge::tracker_update_with_dt(
+        &mut s.pose_tracker, dt, raw_persons,
     );
     if !tracked.is_empty() {
         update.persons = Some(tracked);
@@ -3600,10 +3602,12 @@ async fn udp_receiver_task(state: SharedState, udp_port: u16) {
                     };
 
                     // Feed field model calibration if active (use per-node history for ESP32).
-                    if let Some(ref mut fm) = s.field_model {
-                        if let Some(ns) = s.node_states.get(&node_id) {
-                            field_bridge::maybe_feed_calibration(fm, &ns.frame_history);
-                        }
+                    // Extract frame_history before borrowing field_model mutably
+                    // to satisfy the borrow checker (separate struct field borrows).
+                    let history_clone = s.node_states.get(&node_id)
+                        .map(|ns| ns.frame_history.clone());
+                    if let (Some(ref mut fm), Some(ref hist)) = (&mut s.field_model, &history_clone) {
+                        field_bridge::maybe_feed_calibration(fm, hist);
                     }
 
                     // Build nodes array with all active nodes.
@@ -3685,8 +3689,9 @@ async fn udp_receiver_task(state: SharedState, udp_port: u16) {
                     };
 
                     let raw_persons = derive_pose_from_sensing(&update);
-                    let tracked = tracker_bridge::tracker_update(
-                        &mut s.pose_tracker, &mut s.last_tracker_instant, raw_persons,
+                    let dt = tracker_bridge::advance_dt(&mut s.last_tracker_instant);
+                    let tracked = tracker_bridge::tracker_update_with_dt(
+                        &mut s.pose_tracker, dt, raw_persons,
                     );
                     if !tracked.is_empty() {
                         update.persons = Some(tracked);
@@ -3848,10 +3853,12 @@ async fn udp_receiver_task(state: SharedState, udp_port: u16) {
                     };
 
                     // Feed field model calibration if active (use per-node history for ESP32).
-                    if let Some(ref mut fm) = s.field_model {
-                        if let Some(ns) = s.node_states.get(&node_id) {
-                            field_bridge::maybe_feed_calibration(fm, &ns.frame_history);
-                        }
+                    // Extract frame_history before borrowing field_model mutably
+                    // to satisfy the borrow checker (separate struct field borrows).
+                    let history_clone = s.node_states.get(&node_id)
+                        .map(|ns| ns.frame_history.clone());
+                    if let (Some(ref mut fm), Some(ref hist)) = (&mut s.field_model, &history_clone) {
+                        field_bridge::maybe_feed_calibration(fm, hist);
                     }
 
                     // Build nodes array with all active nodes.
@@ -3895,8 +3902,9 @@ async fn udp_receiver_task(state: SharedState, udp_port: u16) {
                     };
 
                     let raw_persons = derive_pose_from_sensing(&update);
-                    let tracked = tracker_bridge::tracker_update(
-                        &mut s.pose_tracker, &mut s.last_tracker_instant, raw_persons,
+                    let dt = tracker_bridge::advance_dt(&mut s.last_tracker_instant);
+                    let tracked = tracker_bridge::tracker_update_with_dt(
+                        &mut s.pose_tracker, dt, raw_persons,
                     );
                     if !tracked.is_empty() {
                         update.persons = Some(tracked);
@@ -4031,8 +4039,9 @@ async fn simulated_data_task(state: SharedState, tick_ms: u64) {
 
         // Populate persons from the sensing update (Kalman-smoothed via tracker).
         let raw_persons = derive_pose_from_sensing(&update);
-        let tracked = tracker_bridge::tracker_update(
-            &mut s.pose_tracker, &mut s.last_tracker_instant, raw_persons,
+        let dt = tracker_bridge::advance_dt(&mut s.last_tracker_instant);
+        let tracked = tracker_bridge::tracker_update_with_dt(
+            &mut s.pose_tracker, dt, raw_persons,
         );
         if !tracked.is_empty() {
             update.persons = Some(tracked);

@@ -174,14 +174,32 @@ pub fn tracker_to_person_detections(tracker: &PoseTracker) -> Vec<PersonDetectio
 /// 4. Updates matched tracks, creates new tracks for unmatched detections
 /// 5. Prunes terminated tracks
 /// 6. Returns smoothed PersonDetection values from the tracker state
+/// Compute the delta-time since the last tracker update and advance the instant.
+/// Call this BEFORE `tracker_update_with_dt` to avoid double-mutable-borrow on the
+/// parent state struct when both fields are behind an `RwLockWriteGuard`.
+pub fn advance_dt(last_instant: &mut Option<Instant>) -> f32 {
+    let now = Instant::now();
+    let dt = last_instant.map_or(0.1_f32, |prev| now.duration_since(prev).as_secs_f32());
+    *last_instant = Some(now);
+    dt
+}
+
+/// Convenience wrapper that advances dt and updates tracker in one call.
+/// Use this when `tracker` and `last_instant` are NOT behind the same lock guard.
 pub fn tracker_update(
     tracker: &mut PoseTracker,
     last_instant: &mut Option<Instant>,
     persons: Vec<PersonDetection>,
 ) -> Vec<PersonDetection> {
-    let now = Instant::now();
-    let dt = last_instant.map_or(0.1_f32, |prev| now.duration_since(prev).as_secs_f32());
-    *last_instant = Some(now);
+    let dt = advance_dt(last_instant);
+    tracker_update_with_dt(tracker, dt, persons)
+}
+
+pub fn tracker_update_with_dt(
+    tracker: &mut PoseTracker,
+    dt: f32,
+    persons: Vec<PersonDetection>,
+) -> Vec<PersonDetection> {
 
     // Predict all tracks forward
     tracker.predict_all(dt);
