@@ -12,3 +12,7 @@ categories = ["config", "science"]
 readme = "README.md"
 
 [dependencies]
+serde = { workspace = true }
+serde_json.workspace = true
+toml = "0.8"
+thiserror = "1.0"
