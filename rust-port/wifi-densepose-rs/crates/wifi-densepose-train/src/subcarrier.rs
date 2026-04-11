@@ -58,12 +58,16 @@ pub fn interpolate_subcarriers(arr: &Array4<f32>, target_sc: usize) -> Array4<f3
         for tx in 0..n_tx {
             for rx in 0..n_rx {
                 let src = arr.slice(s![t, tx, rx, ..]);
-                let src_slice = src.as_slice().unwrap_or_else(|| {
-                    // Fallback: copy to a contiguous slice
-                    // (this path is hit when the array has a non-contiguous layout)
-                    // In practice ndarray arrays sliced along last dim are contiguous.
-                    panic!("Subcarrier slice is not contiguous");
-                });
+                let src_vec;
+                let src_slice = match src.as_slice() {
+                    Some(s) => s,
+                    None => {
+                        // Fallback: copy to a contiguous vec when the array
+                        // has a non-contiguous layout (rare but possible).
+                        src_vec = src.to_vec();
+                        &src_vec
+                    }
+                };
 
                 for (k, &(i0, i1, w)) in weights.iter().enumerate() {
                     let v = src_slice[i0] * (1.0 - w) + src_slice[i1] * w;

@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 from src.config.settings import Settings
 from src.config.domains import DomainConfig
@@ -107,22 +108,45 @@ class PoseService:
     async def _initialize_models(self):
         """Initialize neural network models."""
         try:
-            # Initialize DensePose model
+            # DensePose head config — must match modality translator output
+            densepose_config = {
+                'input_channels': 256,  # Must match modality translator output_channels
+                'num_body_parts': 24,   # COCO DensePose: 24 body surface parts
+                'num_uv_coordinates': 2, # U and V coordinates
+                'hidden_channels': [128, 64],
+                'dropout_rate': 0.1,
+            }
+            self.densepose_model = DensePoseHead(densepose_config)
+
+            # Load model weights if path is provided
             if self.settings.pose_model_path:
-                self.densepose_model = DensePoseHead()
-                # Load model weights if path is provided
-                # model_state = torch.load(self.settings.pose_model_path)
-                # self.densepose_model.load_state_dict(model_state)
-                self.logger.info("DensePose model loaded")
+                try:
+                    import os
+                    if os.path.exists(self.settings.pose_model_path):
+                        model_state = torch.load(
+                            self.settings.pose_model_path,
+                            map_location='cpu',
+                            weights_only=True
+                        )
+                        self.densepose_model.load_state_dict(model_state)
+                        self.logger.info(f"DensePose model weights loaded from {self.settings.pose_model_path}")
+                    else:
+                        self.logger.warning(
+                            f"Model file not found at {self.settings.pose_model_path}, "
+                            "using randomly initialized weights"
+                        )
+                except Exception as e:
+                    self.logger.warning(f"Failed to load model weights: {e}, using random initialization")
             else:
-                self.logger.warning("No pose model path provided, using default model")
-                self.densepose_model = DensePoseHead()
-            
+                self.logger.warning("No pose model path provided, using randomly initialized weights")
+
             # Initialize modality translation
+            # input_channels=64: CSI amplitude (32 subcarrier pairs) + phase (32 subcarrier pairs)
+            # output_channels=256: must match DensePose input_channels
             config = {
                 'input_channels': 64,  # CSI data channels
                 'hidden_channels': [128, 256, 512],
-                'output_channels': 256,  # Visual feature channels
+                'output_channels': 256,  # Must match densepose_config['input_channels']
                 'use_attention': True
             }
             self.modality_translator = ModalityTranslationNetwork(config)
@@ -235,74 +259,141 @@ class PoseService:
         """Estimate poses from processed CSI data."""
         if self.settings.mock_pose_data:
             return self._generate_mock_poses()
-        
+
         try:
             # Convert CSI data to tensor
             csi_tensor = torch.from_numpy(csi_data).float()
-            
-            # Add batch dimension if needed
-            if len(csi_tensor.shape) == 2:
-                csi_tensor = csi_tensor.unsqueeze(0)
-            
+
+            # Reshape CSI data to match modality translator input: [B, 64, H, W]
+            # CSI data may come as 1D (flat), 2D (antennas x subcarriers), or 3D
+            if len(csi_tensor.shape) == 1:
+                # Flat CSI vector — reshape to [1, 64, H, W] where H*W*64 = total
+                total = csi_tensor.shape[0]
+                n_channels = 64
+                spatial = total // n_channels
+                h = w = max(1, int(spatial ** 0.5))
+                # Pad or truncate to fit
+                needed = n_channels * h * w
+                if total < needed:
+                    csi_tensor = F.pad(csi_tensor, (0, needed - total))
+                else:
+                    csi_tensor = csi_tensor[:needed]
+                csi_tensor = csi_tensor.view(1, n_channels, h, w)
+            elif len(csi_tensor.shape) == 2:
+                # [antennas, subcarriers] or [time, features] — reshape to [1, 64, H, W]
+                rows, cols = csi_tensor.shape
+                n_channels = 64
+                # Flatten and reshape
+                flat = csi_tensor.flatten()
+                spatial = flat.shape[0] // n_channels
+                h = w = max(1, int(spatial ** 0.5))
+                needed = n_channels * h * w
+                if flat.shape[0] < needed:
+                    flat = F.pad(flat, (0, needed - flat.shape[0]))
+                else:
+                    flat = flat[:needed]
+                csi_tensor = flat.view(1, n_channels, h, w)
+            elif len(csi_tensor.shape) == 3:
+                # [B, H, W] — need to expand to [B, 64, H, W]
+                csi_tensor = csi_tensor.unsqueeze(1).expand(-1, 64, -1, -1)
+            # If already 4D, use as-is but verify channel count
+            if len(csi_tensor.shape) == 4 and csi_tensor.shape[1] != 64:
+                # Adjust channels via interpolation or padding
+                b, c, h, w = csi_tensor.shape
+                if c < 64:
+                    csi_tensor = F.pad(csi_tensor, (0, 0, 0, 0, 0, 64 - c))
+                else:
+                    csi_tensor = csi_tensor[:, :64, :, :]
+
             # Translate modality (CSI to visual-like features)
             with torch.no_grad():
                 visual_features = self.modality_translator(csi_tensor)
-                
-                # Estimate poses using DensePose
+
+                # Estimate poses using DensePose — returns dict with 'segmentation' and 'uv_coordinates'
                 pose_outputs = self.densepose_model(visual_features)
-            
+
             # Convert outputs to pose detections
             poses = self._parse_pose_outputs(pose_outputs)
-            
+
             # Filter by confidence threshold
             filtered_poses = [
-                pose for pose in poses 
+                pose for pose in poses
                 if pose.get("confidence", 0.0) >= self.settings.pose_confidence_threshold
             ]
-            
+
             # Limit number of persons
             if len(filtered_poses) > self.settings.pose_max_persons:
                 filtered_poses = sorted(
-                    filtered_poses, 
-                    key=lambda x: x.get("confidence", 0.0), 
+                    filtered_poses,
+                    key=lambda x: x.get("confidence", 0.0),
                     reverse=True
                 )[:self.settings.pose_max_persons]
-            
+
             return filtered_poses
-            
+
         except Exception as e:
             self.logger.error(f"Error in pose estimation: {e}")
             return []
     
-    def _parse_pose_outputs(self, outputs: torch.Tensor) -> List[Dict[str, Any]]:
+    def _parse_pose_outputs(self, outputs) -> List[Dict[str, Any]]:
         """Parse neural network outputs into pose detections.
 
-        Extracts confidence, keypoints, bounding boxes, and activity from model
-        output tensors. The exact interpretation depends on the model architecture;
-        this implementation assumes the DensePoseHead output format.
+        Handles DensePoseHead output format: a dict with 'segmentation' and
+        'uv_coordinates' tensors, OR a raw tensor for backwards compatibility.
 
         Args:
-            outputs: Model output tensor of shape (batch, features).
+            outputs: Either a dict {'segmentation': Tensor, 'uv_coordinates': Tensor}
+                     or a raw tensor of shape (batch, features).
 
         Returns:
             List of pose detection dictionaries.
         """
         poses = []
-        batch_size = outputs.shape[0]
 
+        # Handle DensePoseHead dict output
+        if isinstance(outputs, dict):
+            seg_logits = outputs['segmentation']      # [B, num_parts+1, H, W]
+            uv_coords = outputs['uv_coordinates']     # [B, 2, H, W]
+            batch_size = seg_logits.shape[0]
+
+            for i in range(batch_size):
+                # Per-pixel body part classification
+                seg_probs = torch.softmax(seg_logits[i], dim=0)  # [num_parts+1, H, W]
+                # Background is class 0; confidence = 1 - max background probability
+                bg_prob = seg_probs[0].mean().item()
+                confidence = 1.0 - bg_prob
+
+                # Extract keypoints from segmentation centroids
+                keypoints = self._extract_keypoints_from_segmentation(seg_probs, uv_coords[i])
+
+                # Bounding box from non-background pixels
+                body_mask = torch.argmax(seg_probs, dim=0) > 0  # True where body detected
+                bounding_box = self._extract_bbox_from_mask(body_mask)
+
+                # Activity from UV coordinate variance (proxy for motion)
+                uv_variance = uv_coords[i].var().item()
+                activity = self._classify_activity_from_variance(uv_variance)
+
+                pose = {
+                    "person_id": i,
+                    "confidence": confidence,
+                    "keypoints": keypoints,
+                    "bounding_box": bounding_box,
+                    "activity": activity,
+                    "timestamp": datetime.now().isoformat(),
+                }
+                poses.append(pose)
+
+            return poses
+
+        # Fallback: handle raw tensor output for backwards compatibility
+        batch_size = outputs.shape[0]
         for i in range(batch_size):
             output_i = outputs[i] if len(outputs.shape) > 1 else outputs
 
-            # Extract confidence from first output channel
             confidence = float(torch.sigmoid(output_i[0]).item()) if output_i.shape[0] > 0 else 0.0
-
-            # Extract keypoints from model output if available
             keypoints = self._extract_keypoints_from_output(output_i)
-
-            # Extract bounding box from model output if available
             bounding_box = self._extract_bbox_from_output(output_i)
-
-            # Classify activity from features
             activity = self._classify_activity(output_i)
 
             pose = {
@@ -313,10 +404,120 @@ class PoseService:
                 "activity": activity,
                 "timestamp": datetime.now().isoformat(),
             }
-
             poses.append(pose)
 
         return poses
+
+    def _extract_keypoints_from_segmentation(
+        self, seg_probs: torch.Tensor, uv: torch.Tensor
+    ) -> List[Dict[str, Any]]:
+        """Extract 17 COCO keypoints from DensePose segmentation + UV output.
+
+        Maps DensePose body part centroids to approximate COCO keypoint locations.
+
+        Args:
+            seg_probs: Softmax probabilities [num_parts+1, H, W]
+            uv: UV coordinates [2, H, W]
+
+        Returns:
+            List of keypoint dicts with name, x, y, confidence.
+        """
+        keypoint_names = [
+            "nose", "left_eye", "right_eye", "left_ear", "right_ear",
+            "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+            "left_wrist", "right_wrist", "left_hip", "right_hip",
+            "left_knee", "right_knee", "left_ankle", "right_ankle",
+        ]
+
+        # Approximate mapping: DensePose part index → COCO keypoint
+        # DensePose has 24 parts; we map the most relevant ones to 17 keypoints
+        part_to_keypoint = {
+            0: 23,  # nose → head part (approx)
+            1: 23, 2: 23, 3: 23, 4: 23,  # eyes, ears → head
+            5: 3, 6: 4,    # shoulders → torso upper
+            7: 5, 8: 6,    # elbows → upper arms
+            9: 7, 10: 8,   # wrists → lower arms
+            11: 1, 12: 2,  # hips → torso lower
+            13: 9, 14: 10, # knees → upper legs
+            15: 11, 16: 12, # ankles → lower legs
+        }
+
+        _, h, w = seg_probs.shape
+        keypoints = []
+
+        for kp_idx, name in enumerate(keypoint_names):
+            part_idx = part_to_keypoint.get(kp_idx, 1)  # default to torso
+            if part_idx < seg_probs.shape[0]:
+                part_map = seg_probs[part_idx]  # [H, W]
+                part_conf = part_map.max().item()
+
+                if part_conf > 0.1:
+                    # Find centroid of this part
+                    flat_idx = part_map.argmax().item()
+                    y_px = flat_idx // w
+                    x_px = flat_idx % w
+                    # Normalize to [0, 1]
+                    x_norm = x_px / max(w - 1, 1)
+                    y_norm = y_px / max(h - 1, 1)
+                else:
+                    x_norm, y_norm, part_conf = 0.0, 0.0, 0.0
+            else:
+                x_norm, y_norm, part_conf = 0.0, 0.0, 0.0
+
+            keypoints.append({
+                "name": name,
+                "x": x_norm,
+                "y": y_norm,
+                "confidence": part_conf,
+            })
+
+        return keypoints
+
+    def _extract_bbox_from_mask(self, mask: torch.Tensor) -> Dict[str, float]:
+        """Extract bounding box from a binary body mask.
+
+        Args:
+            mask: Boolean tensor [H, W] where True = body pixel.
+
+        Returns:
+            Dict with x, y, width, height in normalized [0,1] coords.
+        """
+        if not mask.any():
+            return {"x": 0.0, "y": 0.0, "width": 0.0, "height": 0.0}
+
+        h, w = mask.shape
+        rows = mask.any(dim=1).nonzero(as_tuple=True)[0]
+        cols = mask.any(dim=0).nonzero(as_tuple=True)[0]
+
+        y_min = rows.min().item() / max(h - 1, 1)
+        y_max = rows.max().item() / max(h - 1, 1)
+        x_min = cols.min().item() / max(w - 1, 1)
+        x_max = cols.max().item() / max(w - 1, 1)
+
+        return {
+            "x": x_min,
+            "y": y_min,
+            "width": x_max - x_min,
+            "height": y_max - y_min,
+        }
+
+    def _classify_activity_from_variance(self, uv_variance: float) -> str:
+        """Classify activity from UV coordinate variance.
+
+        Args:
+            uv_variance: Variance of UV predictions (proxy for motion spread).
+
+        Returns:
+            Activity string.
+        """
+        if uv_variance > 0.1:
+            return "walking"
+        elif uv_variance > 0.05:
+            return "standing"
+        elif uv_variance > 0.01:
+            return "sitting"
+        else:
+            return "still"
 
     def _extract_keypoints_from_output(self, output: torch.Tensor) -> List[Dict[str, Any]]:
         """Extract keypoints from a single person's model output.

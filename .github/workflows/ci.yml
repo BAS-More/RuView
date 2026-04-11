@@ -37,16 +37,16 @@ jobs:
         pip install black flake8 mypy bandit safety
 
     - name: Code formatting check (Black)
-      run: black --check --diff src/ tests/
+      run: black --check --diff v1/src/ v1/tests/
 
     - name: Linting (Flake8)
-      run: flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+      run: flake8 v1/src/ v1/tests/ --max-line-length=88 --extend-ignore=E203,W503
 
     - name: Type checking (MyPy)
-      run: mypy src/ --ignore-missing-imports
+      run: mypy v1/src/ --ignore-missing-imports
 
     - name: Security scan (Bandit)
-      run: bandit -r src/ -f json -o bandit-report.json
+      run: bandit -r v1/src/ -f json -o bandit-report.json
       continue-on-error: true
 
     - name: Dependency vulnerability scan (Safety)
@@ -141,7 +141,7 @@ jobs:
         REDIS_URL: redis://localhost:6379/0
         ENVIRONMENT: test
       run: |
-        pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=html --junitxml=junit.xml
+        pytest v1/tests/unit/ -v --cov=v1/src --cov-report=xml --cov-report=html --junitxml=junit.xml
 
     - name: Run integration tests
       env:
@@ -149,7 +149,7 @@ jobs:
         REDIS_URL: redis://localhost:6379/0
         ENVIRONMENT: test
       run: |
-        pytest tests/integration/ -v --junitxml=integration-junit.xml
+        pytest v1/tests/integration/ -v --junitxml=integration-junit.xml
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
