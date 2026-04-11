@@ -65,10 +65,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request.state.authenticated = True
                 
                 logger.debug(f"Authenticated user: {user_data.get('id')}")
-                
+                await self._log_auth_event("login_success", request, user_id=user_data.get("id"))
+
             except Exception as e:
-                logger.warning(f"Token validation failed: {e}")
-                
+                reason = str(e)
+                if "expired" in reason.lower():
+                    await self._log_auth_event("token_expired", request, reason=reason)
+                elif "revoked" in reason.lower():
+                    await self._log_auth_event("token_revoked", request, reason=reason)
+                else:
+                    await self._log_auth_event("login_failure", request, reason=reason)
+
                 # For protected paths, return 401
                 if self._is_protected_path(request.url.path):
                     return JSONResponse(
@@ -88,6 +95,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         else:
             # No token provided
             if self._is_protected_path(request.url.path):
+                await self._log_auth_event("unauthorized_access", request, reason="no token provided")
                 return JSONResponse(
                     status_code=401,
                     content={
@@ -224,8 +232,29 @@ class AuthMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             raise ValueError(f"Token verification error: {e}")
     
-    # TODO: Wire up authentication event logging in dispatch() for
-    # security monitoring (login failures, token expiry, etc.).
+    async def _log_auth_event(self, event_type: str, request: Request, **kwargs):
+        """Log authentication events for security monitoring.
+
+        Args:
+            event_type: One of 'login_success', 'login_failure', 'token_expired',
+                       'token_revoked', 'unauthorized_access'.
+            request: The incoming request.
+            **kwargs: Additional event context (user_id, reason, etc.).
+        """
+        client_ip = request.client.host if request.client else "unknown"
+        event = {
+            "event": event_type,
+            "path": str(request.url.path),
+            "method": request.method,
+            "client_ip": client_ip,
+            "timestamp": datetime.utcnow().isoformat(),
+            **kwargs,
+        }
+
+        if event_type in ("login_failure", "token_expired", "unauthorized_access"):
+            logger.warning(f"Auth event: {event}")
+        else:
+            logger.info(f"Auth event: {event}")
 
 
 class TokenBlacklist:

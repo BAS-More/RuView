@@ -3,6 +3,26 @@
 //! ADR-040 Tier 3: Compiled to `wasm32-unknown-unknown`, these modules run
 //! inside the WASM3 interpreter on the ESP32-S3 after Tier 2 DSP completes.
 //!
+//! # Safety
+//!
+//! This crate uses `unsafe` extensively (~330 occurrences) for two reasons:
+//!
+//! 1. **`static mut` event buffers**: WASM modules are single-threaded (no
+//!    `Send`/`Sync` required). Mutable statics are the idiomatic pattern for
+//!    WASM module-level state since there is no allocator or threading runtime.
+//!    Each module has an `EVENTS: Vec<Event>` static that accumulates detected
+//!    events during a sensing cycle, drained by the host after `process()`.
+//!
+//! 2. **FFI host function imports**: The `extern "C"` blocks import host-
+//!    provided CSI accessor functions (`csi_get_phase`, `csi_get_amplitude`,
+//!    etc.) which are inherently unsafe as they cross the WASM/host boundary.
+//!
+//! All unsafe blocks follow these invariants:
+//! - `static mut` access is always single-threaded (WASM3 is single-threaded)
+//! - FFI calls read from host-managed CSI buffers that outlive the WASM call
+//! - No raw pointer arithmetic or transmutes are used
+//! - Event buffers are bounded by `MAX_EVENTS` constant per module
+//!
 //! # Host API (imported from "csi" namespace)
 //!
 //! The ESP32 firmware exposes CSI data through imported functions:
