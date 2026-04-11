@@ -229,6 +229,124 @@ impl RuvSensePipeline {
     pub fn tick(&mut self) {
         self.frame_counter += 1;
     }
+
+    /// Process a batch of per-node CSI frames through the full 6-stage pipeline.
+    ///
+    /// This is the main entry point for the RuvSense pipeline. Call once per
+    /// TDMA sensing cycle (~50ms at 20 Hz).
+    ///
+    /// # Arguments
+    /// * `node_frames` - One `MultiBandCsiFrame` per active ESP32 node
+    ///
+    /// # Returns
+    /// * `SenseOutput` with fused features, coherence score, gate decision,
+    ///   and optionally updated pose tracks
+    ///
+    /// # Pipeline Stages
+    /// 1. Multi-Band Fusion (already done per-node by caller via `MultiBandBuilder`)
+    /// 2. Phase Alignment — correct LO phase rotation between channels
+    /// 3. Multistatic Fusion — fuse N node observations into single frame
+    /// 4. Coherence Scoring — z-score against rolling reference template
+    /// 5. Coherence Gating — accept/reject/recalibrate decision
+    /// 6. Pose Tracking — feed accepted frames to 17-keypoint Kalman tracker
+    pub fn process(
+        &mut self,
+        node_frames: &[MultiBandCsiFrame],
+    ) -> Result<SenseOutput> {
+        self.frame_counter += 1;
+
+        // Stage 2: Phase alignment — correct LO-induced phase rotation
+        // between channels within each node's multi-band frame.
+        let aligned_frames: Vec<MultiBandCsiFrame> = node_frames
+            .iter()
+            .map(|frame| {
+                let mut aligned = frame.clone();
+                if aligned.channel_frames.len() > 1 {
+                    // align() corrects phase offsets across channels
+                    if let Ok(corrected) = self.phase_aligner.align(&aligned.channel_frames) {
+                        aligned.channel_frames = corrected;
+                    }
+                }
+                aligned
+            })
+            .collect();
+
+        // Stage 3: Multistatic fusion — combine all nodes into one frame
+        let fuser = multistatic::MultistaticFuser::new();
+        let fused = fuser.fuse(&aligned_frames)?;
+
+        // Stage 4: Coherence scoring — compare against reference template
+        let coherence_score = self.coherence_state.update(
+            &fused.fused_amplitude,
+        )?;
+
+        // Stage 5: Coherence gating — decide whether to use this frame
+        let gate_decision = self.gate_policy.evaluate(
+            coherence_score,
+            self.coherence_state.stale_count(),
+        );
+
+        // Stage 6: Build output (pose tracking happens downstream with NN output)
+        let output = SenseOutput {
+            frame_id: self.frame_counter,
+            timestamp_us: fused.timestamp_us,
+            fused_amplitude: fused.fused_amplitude.clone(),
+            fused_phase: fused.fused_phase.clone(),
+            coherence_score,
+            gate_decision: gate_decision.clone(),
+            node_count: node_frames.len(),
+            drift_profile: self.coherence_state.drift_profile(),
+        };
+
+        // If gate accepts, reset stale counter
+        if gate_decision.allows_update() {
+            self.coherence_state.reset_stale();
+        }
+
+        // If gate says recalibrate, reinitialize reference template
+        if matches!(gate_decision, GateDecision::Recalibrate { .. }) {
+            self.coherence_state.initialize(&fused.fused_amplitude);
+        }
+
+        Ok(output)
+    }
+
+    /// Initialize the coherence reference template from a calibration frame.
+    ///
+    /// Call this once with an empty-room CSI snapshot before starting
+    /// real-time sensing.
+    pub fn calibrate(&mut self, calibration_amplitude: &[f32]) {
+        self.coherence_state.initialize(calibration_amplitude);
+    }
+
+    /// Reset the pipeline state (coherence, gate, frame counter).
+    pub fn reset(&mut self) {
+        self.frame_counter = 0;
+        self.gate_policy.reset();
+        let n_sub = self.coherence_state.reference().len();
+        self.coherence_state = CoherenceState::new(n_sub, self.config.coherence_accept);
+    }
+}
+
+/// Output of one sensing cycle through the RuvSense pipeline.
+#[derive(Debug, Clone)]
+pub struct SenseOutput {
+    /// Monotonically increasing frame ID.
+    pub frame_id: u64,
+    /// Timestamp of the fused frame in microseconds.
+    pub timestamp_us: u64,
+    /// Fused amplitude vector (one value per subcarrier).
+    pub fused_amplitude: Vec<f32>,
+    /// Fused phase vector (one value per subcarrier).
+    pub fused_phase: Vec<f32>,
+    /// Coherence score for this frame (0.0 to 1.0).
+    pub coherence_score: f32,
+    /// Gate decision: Accept, PredictOnly, Reject, or Recalibrate.
+    pub gate_decision: GateDecision,
+    /// Number of nodes that contributed to this frame.
+    pub node_count: usize,
+    /// Current drift profile of the coherence state.
+    pub drift_profile: coherence::DriftProfile,
 }
 
 impl Default for RuvSensePipeline {

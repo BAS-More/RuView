@@ -7,10 +7,26 @@ use crate::error::{NnError, NnResult};
 use crate::inference::{Backend, InferenceOptions};
 use crate::tensor::{Tensor, TensorShape};
 use ort::session::Session;
+use ort::value::{Outlet, ValueType};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::info;
+
+/// Extract tensor shape from an ONNX session Outlet (input or output descriptor).
+/// Dynamic dimensions (-1) are replaced by 0.
+fn extract_tensor_shape(outlet: &Outlet) -> NnResult<TensorShape> {
+    match outlet.dtype() {
+        ValueType::Tensor { ty: _, shape, .. } => {
+            let dims: Vec<usize> = shape
+                .iter()
+                .map(|&d| if d < 0 { 0 } else { d as usize })
+                .collect();
+            Ok(TensorShape::new(dims))
+        }
+        _ => Err(NnError::model_load("Non-tensor input/output".to_string())),
+    }
+}
 
 /// ONNX Runtime session wrapper
 pub struct OnnxSession {
@@ -57,13 +73,25 @@ impl OnnxSession {
             .map(|output| output.name().to_string())
             .collect();
 
-        // For now, leave shapes empty - they can be populated when needed
-        let input_shapes = HashMap::new();
-        let output_shapes = HashMap::new();
+        // Populate shapes from ONNX model metadata
+        let mut input_shapes = HashMap::new();
+        for outlet in session.inputs() {
+            if let Ok(shape) = extract_tensor_shape(outlet) {
+                input_shapes.insert(outlet.name().to_string(), shape);
+            }
+        }
+        let mut output_shapes = HashMap::new();
+        for outlet in session.outputs() {
+            if let Ok(shape) = extract_tensor_shape(outlet) {
+                output_shapes.insert(outlet.name().to_string(), shape);
+            }
+        }
 
         info!(
             inputs = ?input_names,
             outputs = ?output_names,
+            input_shapes = ?input_shapes,
+            output_shapes = ?output_shapes,
             "ONNX model loaded successfully"
         );
 
