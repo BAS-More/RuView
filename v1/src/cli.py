@@ -193,6 +193,94 @@ def status(ctx, format: str, detailed: bool):
 
 
 @cli.group()
+def sensor():
+    """Phase A multi-modal sensor commands."""
+    pass
+
+
+@sensor.command("status")
+@click.option("--format", type=click.Choice(["text", "json"]), default="text")
+@click.option("--probe/--no-probe", default=True, help="Probe for sensors (default: on)")
+def sensor_status(format: str, probe: bool):
+    """Show connected Phase A sensors and their capabilities."""
+    asyncio.run(_sensor_status(format, probe))
+
+
+async def _sensor_status(fmt: str, probe: bool):
+    """Async implementation of sensor status."""
+    from v1.src.hardware.sensor_registry import SensorRegistry
+
+    reg = SensorRegistry()
+    if probe:
+        click.echo("Probing sensors...")
+        detected = await reg.auto_detect()
+    else:
+        detected = []
+
+    if fmt == "json":
+        import json
+        click.echo(json.dumps(reg.status, indent=2))
+        return
+
+    # Text output
+    click.echo()
+    if not detected:
+        click.echo("  No Phase A sensors detected.")
+        click.echo("  Ensure sensors are connected and drivers installed.")
+        click.echo("  Supported: LD2450, ENS160, AMG8833, BME688, MR60BHA2, INMP441")
+    else:
+        click.echo(f"  Detected {len(detected)} sensor(s):")
+        click.echo()
+        for sid in detected:
+            drv = reg.sensors[sid]
+            caps = ", ".join(c.name for c in drv.capabilities)
+            click.echo(f"    {sid:<12} {drv.bus_type.value:<6} caps=[{caps}]")
+
+    caps = sorted(c.name for c in reg.capabilities)
+    if caps:
+        click.echo()
+        click.echo(f"  Combined capabilities: {', '.join(caps)}")
+    click.echo()
+
+    await reg.shutdown()
+
+
+@sensor.command("read")
+@click.argument("sensor_id")
+@click.option("--count", "-n", default=1, type=int, help="Number of readings")
+@click.option("--interval", default=1.0, type=float, help="Seconds between readings")
+def sensor_read(sensor_id: str, count: int, interval: float):
+    """Read data from a specific sensor."""
+    asyncio.run(_sensor_read(sensor_id, count, interval))
+
+
+async def _sensor_read(sensor_id: str, count: int, interval: float):
+    """Async implementation of sensor read."""
+    import json as json_mod
+    import asyncio as aio
+    from v1.src.hardware.sensor_registry import SensorRegistry
+
+    reg = SensorRegistry()
+    detected = await reg.auto_detect()
+
+    if sensor_id not in reg.sensors:
+        click.echo(f"Sensor '{sensor_id}' not found. Detected: {detected or 'none'}")
+        await reg.shutdown()
+        return
+
+    for i in range(count):
+        try:
+            reading = await reg.read(sensor_id)
+            click.echo(json_mod.dumps(reading.values, indent=2, default=str))
+        except Exception as e:
+            click.echo(f"Read error: {e}")
+        if i < count - 1:
+            await aio.sleep(interval)
+
+    await reg.shutdown()
+
+
+@cli.group()
 def db():
     """Database management commands."""
     pass
