@@ -574,6 +574,16 @@ class SensingWebSocketServer:
         # Probe Phase A sensors (non-blocking, failures are fine)
         await self._init_sensor_registry()
 
+        # Start health monitor if sensors are connected
+        self._health_monitor = None
+        if self.sensor_registry and self.sensor_registry.sensors:
+            try:
+                from v1.src.hardware.health_monitor import SensorHealthMonitor
+                self._health_monitor = SensorHealthMonitor(self.sensor_registry)
+                self._health_monitor.start()
+            except Exception as exc:
+                logger.debug("Health monitor init skipped: %s", exc)
+
         print(f"\n  Sensing WebSocket server on ws://{HOST}:{PORT}")
         print(f"  Source: {self.source}")
         print(f"  Tick: {TICK_INTERVAL}s | Window: {self.extractor.window_seconds}s")
@@ -634,6 +644,8 @@ class SensingWebSocketServer:
         self._running = False
         if self._recorder and self._recorder.is_recording:
             self._recorder.stop()
+        if hasattr(self, '_health_monitor') and self._health_monitor:
+            self._health_monitor.stop()
         if self.collector:
             self.collector.stop()
         # Shutdown Phase A sensors
