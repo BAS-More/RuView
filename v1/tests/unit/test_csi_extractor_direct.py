@@ -15,11 +15,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../'))
 # Import the CSI extractor module directly
 from v1.src.hardware.csi_extractor import (
     CSIExtractor,
+    CSIExtractionError,
     CSIParseError,
     CSIData,
     ESP32CSIParser,
     RouterCSIParser,
-    CSIValidationError
+    CSIValidationError,
 )
 
 
@@ -504,16 +505,17 @@ class TestESP32CSIParserDirect:
 
     @pytest.fixture
     def raw_esp32_data(self):
-        """Sample raw ESP32 CSI data."""
-        return b"CSI_DATA:1234567890,3,56,2400,20,15.5,[1.0,2.0,3.0],[0.5,1.5,2.5]"
+        """Sample raw ESP32 CSI data — 1 antenna, 2 subcarriers."""
+        # Format: CSI_DATA:timestamp,antennas,subcarriers,freq,bw,snr,amp1,amp2,phase1,phase2
+        return b"CSI_DATA:1234567890,1,2,2400,20,15.5,1.0,2.0,0.5,1.5"
 
     def test_should_parse_valid_esp32_data(self, parser, raw_esp32_data):
         """Should parse valid ESP32 CSI data successfully."""
         result = parser.parse(raw_esp32_data)
-        
+
         assert isinstance(result, CSIData)
-        assert result.num_antennas == 3
-        assert result.num_subcarriers == 56
+        assert result.num_antennas == 1
+        assert result.num_subcarriers == 2
         assert result.frequency == 2400000000  # 2.4 GHz
         assert result.bandwidth == 20000000    # 20 MHz
         assert result.snr == 15.5
@@ -574,13 +576,11 @@ class TestRouterCSIParserDirect:
             parser.parse(unknown_data)
 
     def test_parse_atheros_format_directly(self, parser):
-        """Should parse Atheros format directly."""
+        """Atheros format is not implemented — should raise CSIExtractionError."""
         raw_data = b"ATHEROS_CSI:mock_data"
-        
-        result = parser.parse(raw_data)
-        
-        assert isinstance(result, CSIData)
-        assert result.metadata['source'] == 'atheros_router'
+
+        with pytest.raises(CSIExtractionError, match="not yet implemented"):
+            parser.parse(raw_data)
 
     def test_should_handle_empty_data_router(self, parser):
         """Should handle empty data gracefully."""

@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, AsyncMock, patch
 class TestHardwareServiceInit:
     def test_init(self, mock_settings, mock_domain_config):
         mock_settings.mock_hardware = True
-        with patch("src.services.hardware_service.RouterInterface"):
-            from src.services.hardware_service import HardwareService
+        with patch("v1.src.services.hardware_service.RouterInterface"):
+            from v1.src.services.hardware_service import HardwareService
             svc = HardwareService(mock_settings, mock_domain_config)
             assert svc.is_running is False
             assert svc.stats["total_samples"] == 0
@@ -16,8 +16,8 @@ class TestHardwareServiceInit:
 
     def test_stats_defaults(self, mock_settings, mock_domain_config):
         mock_settings.mock_hardware = True
-        with patch("src.services.hardware_service.RouterInterface"):
-            from src.services.hardware_service import HardwareService
+        with patch("v1.src.services.hardware_service.RouterInterface"):
+            from v1.src.services.hardware_service import HardwareService
             svc = HardwareService(mock_settings, mock_domain_config)
             assert svc.stats["successful_samples"] == 0
             assert svc.stats["failed_samples"] == 0
@@ -28,8 +28,8 @@ class TestHardwareServiceLifecycle:
     @pytest.mark.asyncio
     async def test_start(self, mock_settings, mock_domain_config):
         mock_settings.mock_hardware = True
-        with patch("src.services.hardware_service.RouterInterface"):
-            from src.services.hardware_service import HardwareService
+        with patch("v1.src.services.hardware_service.RouterInterface"):
+            from v1.src.services.hardware_service import HardwareService
             svc = HardwareService(mock_settings, mock_domain_config)
             svc._initialize_routers = AsyncMock()
             svc._monitoring_loop = AsyncMock()
@@ -39,8 +39,8 @@ class TestHardwareServiceLifecycle:
     @pytest.mark.asyncio
     async def test_double_start_idempotent(self, mock_settings, mock_domain_config):
         mock_settings.mock_hardware = True
-        with patch("src.services.hardware_service.RouterInterface"):
-            from src.services.hardware_service import HardwareService
+        with patch("v1.src.services.hardware_service.RouterInterface"):
+            from v1.src.services.hardware_service import HardwareService
             svc = HardwareService(mock_settings, mock_domain_config)
             svc._initialize_routers = AsyncMock()
             svc._monitoring_loop = AsyncMock()
@@ -52,14 +52,14 @@ class TestHardwareServiceLifecycle:
 class TestHardwareServiceRouter:
     def test_no_routers_on_init(self, mock_settings, mock_domain_config):
         mock_settings.mock_hardware = True
-        with patch("src.services.hardware_service.RouterInterface"):
-            from src.services.hardware_service import HardwareService
+        with patch("v1.src.services.hardware_service.RouterInterface"):
+            from v1.src.services.hardware_service import HardwareService
             svc = HardwareService(mock_settings, mock_domain_config)
             assert len(svc.router_interfaces) == 0
 
     def test_max_recent_samples(self, mock_settings, mock_domain_config):
         mock_settings.mock_hardware = True
-        with patch("src.services.hardware_service.RouterInterface"):
-            from src.services.hardware_service import HardwareService
+        with patch("v1.src.services.hardware_service.RouterInterface"):
+            from v1.src.services.hardware_service import HardwareService
             svc = HardwareService(mock_settings, mock_domain_config)
             assert svc.max_recent_samples == 1000
