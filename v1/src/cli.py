@@ -280,6 +280,100 @@ async def _sensor_read(sensor_id: str, count: int, interval: float):
     await reg.shutdown()
 
 
+@sensor.command("record")
+@click.argument("output_path")
+@click.option("--duration", "-d", default=30, type=int, help="Recording duration in seconds")
+@click.option("--simulated/--no-simulated", default=True, help="Use simulated sensors")
+def sensor_record(output_path: str, duration: int, simulated: bool):
+    """Record fused sensor data to a JSONL file."""
+    asyncio.run(_sensor_record(output_path, duration, simulated))
+
+
+async def _sensor_record(output_path: str, duration: int, simulated: bool):
+    """Async implementation of sensor record."""
+    from v1.src.hardware.sensor_registry import SensorRegistry
+    from v1.src.hardware.drivers.simulated import SimulatedSensorSuite
+    from v1.src.sensing.multi_sensor_backend import MultiSensorBackend
+    from v1.src.sensing.backend import CommodityBackend
+    from v1.src.sensing.classifier import PresenceClassifier
+    from v1.src.sensing.feature_extractor import RssiFeatureExtractor
+    from v1.src.sensing.rssi_collector import SimulatedCollector
+    from v1.src.sensing.recorder import SensorRecorder
+    import asyncio as aio
+
+    click.echo(f"Recording {duration}s of sensor data to {output_path}")
+
+    # Set up simulated sensor pipeline
+    if simulated:
+        suite = SimulatedSensorSuite()
+        reg = await suite.create_registry()
+    else:
+        reg = SensorRegistry()
+        await reg.auto_detect()
+
+    collector = SimulatedCollector(sample_rate_hz=10.0, seed=42)
+    collector.start()
+    wifi = CommodityBackend(collector, RssiFeatureExtractor(), PresenceClassifier())
+    backend = MultiSensorBackend(wifi, reg)
+
+    recorder = SensorRecorder(output_path)
+    recorder.start()
+
+    tick = 0.5
+    total_ticks = int(duration / tick)
+    for i in range(total_ticks):
+        fused = await backend.fuse()
+        recorder.record_frame(fused)
+        if (i + 1) % 10 == 0:
+            click.echo(f"  {recorder.frame_count} frames recorded...")
+        await aio.sleep(tick)
+
+    recorder.stop()
+    collector.stop()
+    await reg.shutdown()
+    click.echo(f"Done: {recorder.frame_count} frames -> {output_path}")
+
+
+@sensor.command("play")
+@click.argument("input_path")
+@click.option("--speed", default=1.0, type=float, help="Playback speed multiplier")
+def sensor_play(input_path: str, speed: float):
+    """Replay a recorded JSONL session to stdout."""
+    asyncio.run(_sensor_play(input_path, speed))
+
+
+async def _sensor_play(input_path: str, speed: float):
+    """Async implementation of sensor play."""
+    import json as json_mod
+    from v1.src.sensing.recorder import SensorPlayer
+
+    player = SensorPlayer(input_path)
+    n = player.load()
+    click.echo(f"Replaying {n} frames at {speed}x speed")
+    click.echo()
+
+    async for frame in player.play(speed=speed):
+        f = frame.get("fusion", {})
+        wifi = frame.get("wifi", {})
+        parts = []
+        if f.get("presence"):
+            parts.append(f"PRESENT ({', '.join(f.get('presence_sources', []))})")
+        else:
+            parts.append("ABSENT")
+        if f.get("heart_rate_bpm"):
+            parts.append(f"HR:{f['heart_rate_bpm']:.0f}")
+        if f.get("breathing_rate_bpm"):
+            parts.append(f"BR:{f['breathing_rate_bpm']:.1f}")
+        if f.get("temperature_c"):
+            parts.append(f"T:{f['temperature_c']:.1f}C")
+        if f.get("db_spl"):
+            parts.append(f"SPL:{f['db_spl']:.0f}dB")
+        click.echo(f"  [{frame.get('frame_id', '?'):>4}] {' | '.join(parts)}")
+
+    click.echo()
+    click.echo(f"Playback complete: {n} frames")
+
+
 @cli.group()
 def db():
     """Database management commands."""

@@ -326,6 +326,10 @@ class SensingWebSocketServer:
         self._last_fused = None      # Last FusedSensingResult
         self._use_simulated_sensors = False  # set via --simulate-sensors flag
 
+        # Recording and playback
+        self._recorder = None        # SensorRecorder when --record is active
+        self._playback_path = None   # Path for --playback mode
+
     def _create_collector(self):
         """Auto-detect data source: ESP32 UDP > platform WiFi > simulated.
 
@@ -489,6 +493,9 @@ class SensingWebSocketServer:
                     if self._fusion_backend:
                         try:
                             self._last_fused = await self._fusion_backend.fuse()
+                            # Record the fused frame if recording is active
+                            if self._recorder and self._recorder.is_recording:
+                                self._recorder.record_frame(self._last_fused)
                         except Exception as exc:
                             logger.debug("Fusion cycle error: %s", exc)
 
@@ -573,11 +580,60 @@ class SensingWebSocketServer:
         print("  Press Ctrl+C to stop\n")
 
         async with websockets.serve(self._handler, HOST, PORT):
-            await self._tick_loop()
+            if self._playback_path:
+                await self._playback_loop()
+            else:
+                await self._tick_loop()
+
+    async def _playback_loop(self) -> None:
+        """Replay a recorded JSONL session to all WebSocket clients."""
+        from v1.src.sensing.recorder import SensorPlayer
+
+        player = SensorPlayer(self._playback_path)
+        n = player.load()
+        print(f"  Replaying {n} frames from {self._playback_path}")
+
+        async for frame in player.play(speed=1.0):
+            if not self._running:
+                break
+            fused = player.as_fused_result(frame)
+            self._last_fused = fused
+
+            # Reconstruct minimal features from the WiFi result
+            features = RssiFeatures(
+                mean=-55.0,
+                variance=fused.wifi.rssi_variance,
+                std=fused.wifi.rssi_variance ** 0.5,
+                range=5.0,
+                iqr=2.5,
+                skewness=0.0,
+                kurtosis=3.0,
+                motion_band_power=fused.wifi.motion_band_energy,
+                breathing_band_power=fused.wifi.breathing_band_energy,
+                total_spectral_power=0.5,
+                dominant_freq_hz=0.5,
+                n_change_points=fused.wifi.n_change_points,
+            )
+            result = SensingResult(
+                motion_level=fused.wifi.motion_level,
+                confidence=fused.wifi.confidence,
+                presence_detected=fused.wifi.presence_detected,
+                rssi_variance=fused.wifi.rssi_variance,
+                motion_band_energy=fused.wifi.motion_band_energy,
+                breathing_band_energy=fused.wifi.breathing_band_energy,
+                n_change_points=fused.wifi.n_change_points,
+            )
+
+            message = self._build_message(features, result)
+            await self._broadcast(message)
+
+        print("  Playback complete")
 
     def stop(self) -> None:
         """Stop the server gracefully."""
         self._running = False
+        if self._recorder and self._recorder.is_recording:
+            self._recorder.stop()
         if self.collector:
             self.collector.stop()
         # Shutdown Phase A sensors
@@ -606,6 +662,16 @@ def main():
         action="store_true",
         help="Use simulated Phase A sensors (no hardware needed)",
     )
+    parser.add_argument(
+        "--record",
+        metavar="PATH",
+        help="Record fused sensor data to a JSONL file",
+    )
+    parser.add_argument(
+        "--playback",
+        metavar="PATH",
+        help="Replay a recorded JSONL session instead of live sensing",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -615,6 +681,17 @@ def main():
 
     server = SensingWebSocketServer()
     server._use_simulated_sensors = args.simulate_sensors
+
+    if args.record:
+        from v1.src.sensing.recorder import SensorRecorder
+        server._recorder = SensorRecorder(args.record)
+        server._recorder.start()
+        print(f"  Recording to: {args.record}")
+
+    if args.playback:
+        server._playback_path = args.playback
+        # Force simulated sensors for playback (no hardware needed)
+        server._use_simulated_sensors = True
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
