@@ -111,6 +111,9 @@ pub struct SensingUpdate {
     pub estimated_persons: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_features: Option<Vec<PerNodeFeatureInfo>>,
+    /// Phase A multi-sensor fusion data (ADR-081).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fusion: Option<FusionInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,6 +187,77 @@ pub struct PerNodeFeatureInfo {
     pub last_seen_ms: u64,
     pub frame_rate_hz: f64,
     pub stale: bool,
+}
+
+// ── Phase A Multi-Sensor Fusion (ADR-081) ──────────────────────────────────
+
+/// Fused multi-modal sensor data from Phase A sensors.
+/// Matches the Python `FusedSensingResult` / JSON `fusion` key.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FusionInfo {
+    /// Fused presence across all modalities.
+    pub presence: bool,
+    /// Which modalities confirmed presence (e.g. "wifi", "mmwave_60ghz", "radar_24ghz", "thermal").
+    pub presence_sources: Vec<String>,
+    /// Multi-modal fused confidence (boosted by agreement).
+    pub fused_confidence: f64,
+
+    /// Vital signs from MR60BHA2 mmWave radar.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub heart_rate_bpm: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub breathing_rate_bpm: Option<f64>,
+
+    /// Distance and tracking from LD2450 / MR60BHA2.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nearest_distance_mm: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target_count: Option<usize>,
+
+    /// Environment from BME688.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub environment: Option<EnvironmentInfo>,
+
+    /// Air quality from ENS160.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub air_quality: Option<AirQualityInfo>,
+
+    /// Thermal from AMG8833.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thermal: Option<ThermalInfo>,
+
+    /// Audio from INMP441.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audio: Option<AudioInfo>,
+}
+
+/// Environment sensor readings (BME688).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvironmentInfo {
+    pub temperature_c: f64,
+    pub humidity_pct: f64,
+    pub pressure_hpa: f64,
+}
+
+/// Air quality readings (ENS160).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AirQualityInfo {
+    pub tvoc_ppb: u32,
+    pub eco2_ppm: u32,
+    pub aqi: u8,
+}
+
+/// Thermal camera readings (AMG8833).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThermalInfo {
+    pub max_c: f64,
+    pub presence: bool,
+}
+
+/// Audio level readings (INMP441).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AudioInfo {
+    pub db_spl: f64,
 }
 
 // ── ESP32 Edge Vitals Packet (ADR-039) ──────────────────────────────────────

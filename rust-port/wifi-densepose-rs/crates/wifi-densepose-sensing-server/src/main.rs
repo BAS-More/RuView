@@ -236,6 +236,9 @@ struct SensingUpdate {
     /// Per-node feature breakdown for multi-node deployments.
     #[serde(skip_serializing_if = "Option::is_none")]
     node_features: Option<Vec<PerNodeFeatureInfo>>,
+    /// Phase A multi-sensor fusion data (ADR-081).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    fusion: Option<crate::types::FusionInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1654,6 +1657,7 @@ async fn windows_wifi_task(state: SharedState, tick_ms: u64) {
             persons: None,
             estimated_persons: if est_persons > 0 { Some(est_persons) } else { None },
             node_features: None,
+            fusion: None,
         };
 
         // Populate persons from the sensing update (Kalman-smoothed via tracker).
@@ -1792,6 +1796,7 @@ async fn windows_wifi_fallback_tick(state: &SharedState, seq: u32) {
         persons: None,
         estimated_persons: if est_persons > 0 { Some(est_persons) } else { None },
         node_features: None,
+            fusion: None,
     };
 
     let raw_persons = derive_pose_from_sensing(&update);
@@ -3686,6 +3691,7 @@ async fn udp_receiver_task(state: SharedState, udp_port: u16) {
                         persons: None,
                         estimated_persons: if total_persons > 0 { Some(total_persons) } else { None },
                         node_features: None,
+            fusion: None,
                     };
 
                     let raw_persons = derive_pose_from_sensing(&update);
@@ -3899,6 +3905,7 @@ async fn udp_receiver_task(state: SharedState, udp_port: u16) {
                         persons: None,
                         estimated_persons: if total_persons > 0 { Some(total_persons) } else { None },
                         node_features: None,
+            fusion: None,
                     };
 
                     let raw_persons = derive_pose_from_sensing(&update);
@@ -4035,6 +4042,7 @@ async fn simulated_data_task(state: SharedState, tick_ms: u64) {
             persons: None,
             estimated_persons: if est_persons > 0 { Some(est_persons) } else { None },
             node_features: None,
+            fusion: None,
         };
 
         // Populate persons from the sensing update (Kalman-smoothed via tracker).
