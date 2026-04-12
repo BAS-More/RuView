@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from unittest.mock import Mock, patch
-from src.models.modality_translation import ModalityTranslationNetwork, ModalityTranslationError
+from v1.src.models.modality_translation import ModalityTranslationNetwork, ModalityTranslationError
 
 
 class TestModalityTranslationNetwork:

@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
-from src.hardware.router_interface import RouterInterface, RouterConnectionError
+from v1.src.hardware.router_interface import RouterInterface, RouterConnectionError
 
 
 class TestRouterInterface:

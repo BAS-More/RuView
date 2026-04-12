@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 import asyncio
 from datetime import datetime, timezone
 
-from src.hardware.csi_extractor import (
+from v1.src.hardware.csi_extractor import (
     CSIExtractor,
     CSIExtractionError,
     CSIParseError,

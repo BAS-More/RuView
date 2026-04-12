@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import time
 from unittest.mock import Mock, patch
-from src.core.phase_sanitizer import PhaseSanitizer, PhaseSanitizationError
+from v1.src.core.phase_sanitizer import PhaseSanitizer, PhaseSanitizationError
 
 
 _SANITIZER_CONFIG = {

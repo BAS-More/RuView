@@ -3,8 +3,8 @@ import numpy as np
 import time
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch
-from src.core.csi_processor import CSIProcessor, CSIFeatures
-from src.hardware.csi_extractor import CSIData
+from v1.src.core.csi_processor import CSIProcessor, CSIFeatures
+from v1.src.hardware.csi_extractor import CSIData
 
 
 def make_csi_data(amplitude=None, phase=None, n_ant=3, n_sub=56):

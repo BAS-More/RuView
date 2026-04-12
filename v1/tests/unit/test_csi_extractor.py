@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import torch
 from unittest.mock import Mock, patch, MagicMock
-from src.hardware.csi_extractor import CSIExtractor, CSIExtractionError
+from v1.src.hardware.csi_extractor import CSIExtractor, CSIExtractionError
 
 
 class TestCSIExtractor:

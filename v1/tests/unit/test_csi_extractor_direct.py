@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../'))
 
 # Import the CSI extractor module directly
-from src.hardware.csi_extractor import (
+from v1.src.hardware.csi_extractor import (
     CSIExtractor,
     CSIParseError,
     CSIData,

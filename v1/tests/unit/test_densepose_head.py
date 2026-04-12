@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from unittest.mock import Mock, patch
-from src.models.densepose_head import DensePoseHead, DensePoseError
+from v1.src.models.densepose_head import DensePoseHead, DensePoseError
 
 
 class TestDensePoseHead:
