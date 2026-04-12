@@ -305,7 +305,11 @@ def generate_signal_field(
 # ---------------------------------------------------------------------------
 
 class SensingWebSocketServer:
-    """Async WebSocket server that broadcasts sensing updates."""
+    """Async WebSocket server that broadcasts sensing updates.
+
+    When Phase A sensors are available, their readings are merged into
+    each ``sensing_update`` broadcast alongside the WiFi CSI/RSSI data.
+    """
 
     def __init__(self) -> None:
         self.clients: Set = set()
@@ -314,6 +318,10 @@ class SensingWebSocketServer:
         self.classifier = PresenceClassifier()
         self.source: str = "unknown"
         self._running = False
+
+        # Phase A multi-modal sensor registry (lazy-initialised)
+        self.sensor_registry = None
+        self._last_sensor_readings: Dict = {}
 
     def _create_collector(self):
         """Auto-detect data source: ESP32 UDP > platform WiFi > simulated.
@@ -397,6 +405,11 @@ class SensingWebSocketServer:
             },
             "signal_field": signal_field,
         }
+
+        # Merge Phase A sensor readings if available
+        if self._last_sensor_readings:
+            msg["sensors"] = self._last_sensor_readings
+
         return json.dumps(msg)
 
     async def _handler(self, websocket):
@@ -435,6 +448,10 @@ class SensingWebSocketServer:
                 if len(samples) >= 4:
                     features = self.extractor.extract(samples)
                     result = self.classifier.classify(features)
+
+                    # Read Phase A sensors concurrently
+                    self._last_sensor_readings = await self._read_sensors()
+
                     message = self._build_message(features, result)
                     await self._broadcast(message)
 
@@ -455,6 +472,31 @@ class SensingWebSocketServer:
 
             await asyncio.sleep(TICK_INTERVAL)
 
+    async def _init_sensor_registry(self) -> None:
+        """Probe Phase A sensors and register any that respond."""
+        try:
+            from v1.src.hardware.sensor_registry import SensorRegistry
+            self.sensor_registry = SensorRegistry()
+            detected = await self.sensor_registry.auto_detect()
+            if detected:
+                print(f"  Phase A sensors: {', '.join(detected)}")
+            else:
+                print("  Phase A sensors: none detected (WiFi-only mode)")
+        except Exception as exc:
+            logger.debug("Phase A sensor init skipped: %s", exc)
+            self.sensor_registry = None
+
+    async def _read_sensors(self) -> Dict:
+        """Read all connected Phase A sensors, return dict of values."""
+        if not self.sensor_registry or not self.sensor_registry.sensors:
+            return {}
+        try:
+            readings = await self.sensor_registry.read_all()
+            return {sid: r.values for sid, r in readings.items()}
+        except Exception as exc:
+            logger.debug("Sensor read error: %s", exc)
+            return {}
+
     async def run(self) -> None:
         """Start the server and run until interrupted."""
         try:
@@ -467,6 +509,9 @@ class SensingWebSocketServer:
         self.collector = self._create_collector()
         self.collector.start()
         self._running = True
+
+        # Probe Phase A sensors (non-blocking, failures are fine)
+        await self._init_sensor_registry()
 
         print(f"\n  Sensing WebSocket server on ws://{HOST}:{PORT}")
         print(f"  Source: {self.source}")
@@ -481,6 +526,11 @@ class SensingWebSocketServer:
         self._running = False
         if self.collector:
             self.collector.stop()
+        # Shutdown Phase A sensors
+        if self.sensor_registry:
+            asyncio.get_event_loop().run_until_complete(
+                self.sensor_registry.shutdown()
+            )
         logger.info("Sensing server stopped")
 
 
