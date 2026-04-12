@@ -140,24 +140,28 @@ class TestSensorHealthMonitor:
     async def test_gives_up_after_max_reconnects(self):
         """A driver that fails reads and reconnects should eventually give up."""
         drv = FlakyDriver("giveup", fail_after=0)
-        # Register normally (connect succeeds), then it fails on every read
         reg = await _make_registry(drv)
 
-        # Patch connect to fail from now on (simulates hardware removal)
-        original_connect = drv._connect
+        # Patch connect to fail (simulates hardware removal)
         async def fail_connect():
             raise RuntimeError("Hardware removed")
         drv._connect = fail_connect
 
         mon = SensorHealthMonitor(
             reg,
-            check_interval=0.02,
+            check_interval=0.05,
             max_consecutive_failures=1,
             max_reconnect_attempts=2,
-            backoff_base=0.01,
+            backoff_base=0.001,  # near-instant backoff
+            backoff_max=0.01,
         )
         mon.start()
-        await asyncio.sleep(1.5)
+        # Poll until DISCONNECTED or timeout
+        for _ in range(100):
+            await asyncio.sleep(0.05)
+            state = mon.states.get("giveup")
+            if state and state.health == SensorHealth.DISCONNECTED:
+                break
         mon.stop()
         state = mon.states["giveup"]
         assert state.health == SensorHealth.DISCONNECTED
