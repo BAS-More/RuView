@@ -64,7 +64,7 @@ async def _collect_status_data(settings: Settings, detailed: bool) -> Dict[str, 
 async def _get_server_status(settings: Settings) -> Dict[str, Any]:
     """Get server process status."""
     
-    from src.commands.stop import get_server_status
+    from v1.src.commands.stop import get_server_status
     
     status = get_server_status(settings)
     
@@ -138,7 +138,7 @@ async def _get_database_status(settings: Settings) -> Dict[str, Any]:
     }
     
     try:
-        from src.database.connection import get_database_manager
+        from v1.src.database.connection import get_database_manager
         
         db_manager = get_database_manager(settings)
         
@@ -154,7 +154,7 @@ async def _get_database_status(settings: Settings) -> Dict[str, Any]:
         async with db_manager.get_async_session() as session:
             import sqlalchemy as sa
             from sqlalchemy import text, func, select
-            from src.database.models import Device, Session, CSIData, PoseDetection, SystemMetric, AuditLog
+            from v1.src.database.models import Device, Session, CSIData, PoseDetection, SystemMetric, AuditLog
             
             tables = {
                 "devices": Device,
@@ -197,7 +197,7 @@ async def _get_background_tasks_status(settings: Settings) -> Dict[str, Any]:
     
     try:
         # Cleanup tasks
-        from src.tasks.cleanup import get_cleanup_manager
+        from v1.src.tasks.cleanup import get_cleanup_manager
         cleanup_manager = get_cleanup_manager(settings)
         tasks_status["cleanup"] = cleanup_manager.get_stats()
         
@@ -206,7 +206,7 @@ async def _get_background_tasks_status(settings: Settings) -> Dict[str, Any]:
     
     try:
         # Monitoring tasks
-        from src.tasks.monitoring import get_monitoring_manager
+        from v1.src.tasks.monitoring import get_monitoring_manager
         monitoring_manager = get_monitoring_manager(settings)
         tasks_status["monitoring"] = monitoring_manager.get_stats()
         
@@ -215,7 +215,7 @@ async def _get_background_tasks_status(settings: Settings) -> Dict[str, Any]:
     
     try:
         # Backup tasks
-        from src.tasks.backup import get_backup_manager
+        from v1.src.tasks.backup import get_backup_manager
         backup_manager = get_backup_manager(settings)
         tasks_status["backup"] = backup_manager.get_stats()
         
@@ -284,7 +284,7 @@ async def _get_health_status(settings: Settings) -> Dict[str, Any]:
     
     # Check database health
     try:
-        from src.database.connection import get_database_manager
+        from v1.src.database.connection import get_database_manager
         
         db_manager = get_database_manager(settings)
         await db_manager.test_connection()
@@ -478,7 +478,7 @@ def _print_text_status(status_data: Dict[str, Any], detailed: bool) -> None:
 def get_quick_status(settings: Settings) -> str:
     """Get a quick one-line status."""
     
-    from src.commands.stop import get_server_status
+    from v1.src.commands.stop import get_server_status
     
     status = get_server_status(settings)
     

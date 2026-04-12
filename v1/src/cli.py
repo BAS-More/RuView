@@ -208,7 +208,7 @@ def init(ctx, url: Optional[str]):
     """Initialize the database schema."""
     
     try:
-        from src.database.connection import get_database_manager
+        from v1.src.database.connection import get_database_manager
         from alembic.config import Config
         from alembic import command
         import os
@@ -313,9 +313,9 @@ def run(ctx, task: Optional[str]):
     """Run background tasks."""
     
     try:
-        from src.tasks.cleanup import get_cleanup_manager
-        from src.tasks.monitoring import get_monitoring_manager
-        from src.tasks.backup import get_backup_manager
+        from v1.src.tasks.cleanup import get_cleanup_manager
+        from v1.src.tasks.monitoring import get_monitoring_manager
+        from v1.src.tasks.backup import get_backup_manager
         
         # Get settings
         settings = get_settings_with_config(ctx.obj.get('config_file'))
@@ -349,9 +349,9 @@ def status(ctx):
     """Show background task status."""
     
     try:
-        from src.tasks.cleanup import get_cleanup_manager
-        from src.tasks.monitoring import get_monitoring_manager
-        from src.tasks.backup import get_backup_manager
+        from v1.src.tasks.cleanup import get_cleanup_manager
+        from v1.src.tasks.monitoring import get_monitoring_manager
+        from v1.src.tasks.backup import get_backup_manager
         import json
         
         # Get settings
@@ -442,7 +442,7 @@ def validate(ctx):
         settings = get_settings_with_config(ctx.obj.get('config_file'))
         
         # Validate database connection
-        from src.database.connection import get_database_manager
+        from v1.src.database.connection import get_database_manager
         
         async def validate_config():
             db_manager = get_database_manager(settings)
@@ -515,7 +515,7 @@ def failsafe(ctx, format: str):
     
     try:
         import json
-        from src.database.connection import get_database_manager
+        from v1.src.database.connection import get_database_manager
         
         # Get settings
         settings = get_settings_with_config(ctx.obj.get('config_file'))
@@ -598,7 +598,7 @@ def version():
     """Show version information."""
     
     try:
-        from src.config.settings import get_settings
+        from v1.src.config.settings import get_settings
         
         settings = get_settings()
         

@@ -11,7 +11,7 @@ try:
     from .csi_extractor import CSIData
 except ImportError:
     # Handle import for testing
-    from src.hardware.csi_extractor import CSIData
+    from v1.src.hardware.csi_extractor import CSIData
 
 
 class RouterConnectionError(Exception):

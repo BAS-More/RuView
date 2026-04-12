@@ -81,7 +81,7 @@ async def websocket_pose_stream(
         await websocket.accept()
 
         # First-message authentication (CWE-598 fix: no JWT in URL)
-        from src.config.settings import get_settings
+        from v1.src.config.settings import get_settings
         settings = get_settings()
 
         if settings.enable_authentication:
@@ -96,7 +96,7 @@ async def websocket_pose_stream(
                     await websocket.close(code=1008)
                     return
                 # Verify the token
-                from src.middleware.auth import get_auth_middleware
+                from v1.src.middleware.auth import get_auth_middleware
                 auth_middleware = get_auth_middleware(settings)
                 try:
                     auth_middleware.token_manager.verify_token(auth_msg["token"])
@@ -195,7 +195,7 @@ async def websocket_events_stream(
         await websocket.accept()
 
         # First-message authentication (CWE-598 fix: no JWT in URL)
-        from src.config.settings import get_settings
+        from v1.src.config.settings import get_settings
         settings = get_settings()
 
         if settings.enable_authentication:
@@ -209,7 +209,7 @@ async def websocket_events_stream(
                     })
                     await websocket.close(code=1008)
                     return
-                from src.middleware.auth import get_auth_middleware
+                from v1.src.middleware.auth import get_auth_middleware
                 auth_middleware = get_auth_middleware(settings)
                 try:
                     auth_middleware.token_manager.verify_token(auth_msg["token"])

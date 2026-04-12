@@ -165,7 +165,7 @@ class HealthCheckService:
         
         try:
             # Import here to avoid circular imports
-            from src.database.connection import get_database_manager
+            from v1.src.database.connection import get_database_manager
             
             db_manager = get_database_manager()
             
@@ -244,7 +244,7 @@ class HealthCheckService:
         
         try:
             # Import here to avoid circular imports
-            from src.api.dependencies import get_hardware_service
+            from v1.src.api.dependencies import get_hardware_service
             
             hardware_service = get_hardware_service()
             
@@ -285,7 +285,7 @@ class HealthCheckService:
         
         try:
             # Import here to avoid circular imports
-            from src.api.dependencies import get_pose_service
+            from v1.src.api.dependencies import get_pose_service
             
             pose_service = get_pose_service()
             
@@ -326,7 +326,7 @@ class HealthCheckService:
         
         try:
             # Import here to avoid circular imports
-            from src.api.dependencies import get_stream_service
+            from v1.src.api.dependencies import get_stream_service
             
             stream_service = get_stream_service()
             

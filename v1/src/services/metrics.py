@@ -205,7 +205,7 @@ class MetricsService:
         """Collect application-specific metrics."""
         try:
             # Import here to avoid circular imports
-            from src.api.websocket.connection_manager import connection_manager
+            from v1.src.api.websocket.connection_manager import connection_manager
             
             # Active connections
             connection_stats = await connection_manager.get_connection_stats()

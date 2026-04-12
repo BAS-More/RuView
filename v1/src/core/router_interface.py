@@ -64,7 +64,7 @@ class RouterInterface:
 
     def _initialize_mock_generator(self):
         """Initialize mock data generator from the testing module."""
-        from src.testing.mock_csi_generator import MockCSIGenerator
+        from v1.src.testing.mock_csi_generator import MockCSIGenerator
         self._mock_csi_generator = MockCSIGenerator()
         self._mock_csi_generator.show_banner()
     

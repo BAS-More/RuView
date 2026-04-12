@@ -92,7 +92,7 @@ async def _validate_startup_requirements(settings: Settings) -> None:
     
     # Check database connection
     try:
-        from src.database.connection import get_database_manager
+        from v1.src.database.connection import get_database_manager
         
         db_manager = get_database_manager(settings)
         await db_manager.test_connection()
@@ -134,7 +134,7 @@ async def _initialize_database(settings: Settings) -> None:
     logger.info("Initializing database...")
     
     try:
-        from src.database.connection import get_database_manager
+        from v1.src.database.connection import get_database_manager
         
         db_manager = get_database_manager(settings)
         await db_manager.initialize()
@@ -156,7 +156,7 @@ async def _start_background_tasks(settings: Settings) -> dict:
     try:
         # Start cleanup task
         if settings.cleanup_interval_seconds > 0:
-            from src.tasks.cleanup import run_periodic_cleanup
+            from v1.src.tasks.cleanup import run_periodic_cleanup
             
             cleanup_task = asyncio.create_task(run_periodic_cleanup(settings))
             tasks['cleanup'] = cleanup_task
@@ -164,7 +164,7 @@ async def _start_background_tasks(settings: Settings) -> dict:
         
         # Start monitoring task
         if settings.monitoring_interval_seconds > 0:
-            from src.tasks.monitoring import run_periodic_monitoring
+            from v1.src.tasks.monitoring import run_periodic_monitoring
             
             monitoring_task = asyncio.create_task(run_periodic_monitoring(settings))
             tasks['monitoring'] = monitoring_task
@@ -172,7 +172,7 @@ async def _start_background_tasks(settings: Settings) -> dict:
         
         # Start backup task
         if settings.backup_interval_seconds > 0:
-            from src.tasks.backup import run_periodic_backup
+            from v1.src.tasks.backup import run_periodic_backup
             
             backup_task = asyncio.create_task(run_periodic_backup(settings))
             tasks['backup'] = backup_task

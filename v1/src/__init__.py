@@ -14,8 +14,8 @@ This package provides:
 - Comprehensive monitoring and logging
 
 Example usage:
-    >>> from src.app import app
-    >>> from src.config.settings import get_settings
+    >>> from v1.src.app import app
+    >>> from v1.src.config.settings import get_settings
     >>> 
     >>> settings = get_settings()
     >>> # Run with: uvicorn src.app:app --host 0.0.0.0 --port 8000
@@ -46,24 +46,24 @@ __version_info__ = tuple(int(x) for x in __version__.split('.'))
 
 # Import key components for easy access
 try:
-    from src.app import app
-    from src.config.settings import get_settings, Settings
-    from src.logger import setup_logging, get_logger
+    from v1.src.app import app
+    from v1.src.config.settings import get_settings, Settings
+    from v1.src.logger import setup_logging, get_logger
     
     # Core components
-    from src.core.csi_processor import CSIProcessor
-    from src.core.phase_sanitizer import PhaseSanitizer
-    from src.core.pose_estimator import PoseEstimator
-    from src.core.router_interface import RouterInterface
+    from v1.src.core.csi_processor import CSIProcessor
+    from v1.src.core.phase_sanitizer import PhaseSanitizer
+    from v1.src.core.pose_estimator import PoseEstimator
+    from v1.src.core.router_interface import RouterInterface
     
     # Services
-    from src.services.orchestrator import ServiceOrchestrator
-    from src.services.health_check import HealthCheckService
-    from src.services.metrics import MetricsService
+    from v1.src.services.orchestrator import ServiceOrchestrator
+    from v1.src.services.health_check import HealthCheckService
+    from v1.src.services.metrics import MetricsService
     
     # Database
-    from src.database.connection import get_database_manager
-    from src.database.models import (
+    from v1.src.database.connection import get_database_manager
+    from v1.src.database.models import (
         Device, Session, CSIData, PoseDetection, 
         SystemMetric, AuditLog
     )

@@ -220,7 +220,7 @@ class ConfigManager:
         
         try:
             # Validate settings
-            from src.config.settings import validate_settings
+            from v1.src.config.settings import validate_settings
             settings_issues = validate_settings(self.settings)
             issues.extend(settings_issues)
             

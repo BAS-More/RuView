@@ -325,8 +325,8 @@ def setup_root_endpoints(app: FastAPI, settings: Settings):
 # Create default app instance for uvicorn
 def get_app() -> FastAPI:
     """Get the default application instance."""
-    from src.config.settings import get_settings
-    from src.services.orchestrator import ServiceOrchestrator
+    from v1.src.config.settings import get_settings
+    from v1.src.services.orchestrator import ServiceOrchestrator
     
     settings = get_settings()
     orchestrator = ServiceOrchestrator(settings)

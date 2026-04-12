@@ -27,8 +27,8 @@ def build_models(device: torch.device):
     Returns:
         Tuple of (modality_translator, densepose_head).
     """
-    from src.models.modality_translation import ModalityTranslationNetwork
-    from src.models.densepose_head import DensePoseHead
+    from v1.src.models.modality_translation import ModalityTranslationNetwork
+    from v1.src.models.densepose_head import DensePoseHead
 
     mt_config = {
         'input_channels': 64,

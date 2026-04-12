@@ -118,7 +118,7 @@ def evaluate(
     device = torch.device(device_name)
 
     # Load model
-    from src.training.train_pose import build_models
+    from v1.src.training.train_pose import build_models
     mt, dp = build_models(device)
 
     checkpoint = torch.load(model_path, map_location=device, weights_only=True)

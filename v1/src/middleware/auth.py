@@ -57,7 +57,7 @@ class TokenManager:
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
             # Check token blacklist (logout invalidation)
-            from src.api.middleware.auth import token_blacklist
+            from v1.src.api.middleware.auth import token_blacklist
             if token_blacklist.is_blacklisted(token):
                 raise AuthenticationError("Token has been revoked")
             return payload

@@ -207,7 +207,7 @@ class PoseService:
     async def _process_csi(self, csi_data: np.ndarray, metadata: Dict[str, Any]) -> np.ndarray:
         """Process raw CSI data."""
         # Convert raw data to CSIData format
-        from src.hardware.csi_extractor import CSIData
+        from v1.src.hardware.csi_extractor import CSIData
         
         # Create CSIData object with proper fields
         # For mock data, create amplitude and phase from input
@@ -601,7 +601,7 @@ class PoseService:
                 "Set mock_pose_data=True in settings for development, or provide "
                 "real CSI input. See docs/hardware-setup.md."
             )
-        from src.testing.mock_pose_generator import generate_mock_poses
+        from v1.src.testing.mock_pose_generator import generate_mock_poses
         return generate_mock_poses(max_persons=self.settings.pose_max_persons)
 
     def _classify_activity(self, features: torch.Tensor) -> str:
@@ -726,7 +726,7 @@ class PoseService:
                 result = await self.process_csi_data(csi_data, metadata)
             else:
                 # Mock mode: generate mock poses directly (no fake CSI data)
-                from src.testing.mock_pose_generator import generate_mock_poses
+                from v1.src.testing.mock_pose_generator import generate_mock_poses
                 start_time = datetime.now()
                 mock_poses = generate_mock_poses(
                     max_persons=max_persons or self.settings.pose_max_persons
@@ -794,7 +794,7 @@ class PoseService:
         """
         try:
             if self.settings.mock_pose_data:
-                from src.testing.mock_pose_generator import generate_mock_zone_occupancy
+                from v1.src.testing.mock_pose_generator import generate_mock_zone_occupancy
                 return generate_mock_zone_occupancy(zone_id)
 
             # Production: no real-time occupancy data without active CSI stream
@@ -818,7 +818,7 @@ class PoseService:
         """
         try:
             if self.settings.mock_pose_data:
-                from src.testing.mock_pose_generator import generate_mock_zones_summary
+                from v1.src.testing.mock_pose_generator import generate_mock_zones_summary
                 return generate_mock_zones_summary()
 
             # Production: no real-time data without active CSI stream
@@ -851,7 +851,7 @@ class PoseService:
         """
         try:
             if self.settings.mock_pose_data:
-                from src.testing.mock_pose_generator import generate_mock_historical_data
+                from v1.src.testing.mock_pose_generator import generate_mock_historical_data
                 return generate_mock_historical_data(
                     start_time=start_time,
                     end_time=end_time,
@@ -880,7 +880,7 @@ class PoseService:
         """
         try:
             if self.settings.mock_pose_data:
-                from src.testing.mock_pose_generator import generate_mock_recent_activities
+                from v1.src.testing.mock_pose_generator import generate_mock_recent_activities
                 return generate_mock_recent_activities(zone_id=zone_id, limit=limit)
 
             # Production: no activity records without an active CSI stream
@@ -943,7 +943,7 @@ class PoseService:
         """
         try:
             if self.settings.mock_pose_data:
-                from src.testing.mock_pose_generator import generate_mock_statistics
+                from v1.src.testing.mock_pose_generator import generate_mock_statistics
                 return generate_mock_statistics(start_time=start_time, end_time=end_time)
 
             # Production: return actual accumulated statistics

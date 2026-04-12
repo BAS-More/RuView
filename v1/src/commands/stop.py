@@ -186,7 +186,7 @@ async def cleanup_resources(settings: Settings) -> None:
     
     try:
         # Close database connections
-        from src.database.connection import get_database_manager
+        from v1.src.database.connection import get_database_manager
         
         db_manager = get_database_manager(settings)
         await db_manager.close_all_connections()
@@ -276,7 +276,7 @@ async def restart_server(settings: Settings, timeout: int = 30) -> None:
             await stop_command(settings, force=True)
     
     # Start server
-    from src.commands.start import start_command
+    from v1.src.commands.start import start_command
     await start_command(settings)
 
 
