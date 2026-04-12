@@ -324,6 +324,7 @@ class SensingWebSocketServer:
         self.sensor_registry = None
         self._fusion_backend = None  # MultiSensorBackend when sensors available
         self._last_fused = None      # Last FusedSensingResult
+        self._use_simulated_sensors = False  # set via --simulate-sensors flag
 
     def _create_collector(self):
         """Auto-detect data source: ESP32 UDP > platform WiFi > simulated.
@@ -512,7 +513,11 @@ class SensingWebSocketServer:
             await asyncio.sleep(TICK_INTERVAL)
 
     async def _init_sensor_registry(self) -> None:
-        """Probe Phase A sensors and create MultiSensorBackend if any respond."""
+        """Probe Phase A sensors and create MultiSensorBackend.
+
+        Falls back to simulated sensors when ``--simulate-sensors`` is
+        active or no real hardware responds.
+        """
         try:
             from v1.src.hardware.sensor_registry import SensorRegistry
             from v1.src.sensing.multi_sensor_backend import MultiSensorBackend
@@ -521,8 +526,15 @@ class SensingWebSocketServer:
             self.sensor_registry = SensorRegistry()
             detected = await self.sensor_registry.auto_detect()
 
+            # Fall back to simulated sensors if none detected
+            if not detected and self._use_simulated_sensors:
+                from v1.src.hardware.drivers.simulated import SimulatedSensorSuite
+                suite = SimulatedSensorSuite()
+                self.sensor_registry = await suite.create_registry()
+                detected = list(self.sensor_registry.sensors.keys())
+                print(f"  Phase A sensors (SIMULATED): {', '.join(detected)}")
+
             if detected:
-                # Build a CommodityBackend from the current collector
                 wifi_backend = CommodityBackend(
                     self.collector, self.extractor, self.classifier
                 )
@@ -530,7 +542,8 @@ class SensingWebSocketServer:
                     wifi_backend, self.sensor_registry
                 )
                 caps = sorted(c.name for c in self._fusion_backend.get_capabilities())
-                print(f"  Phase A sensors: {', '.join(detected)}")
+                if not self._use_simulated_sensors:
+                    print(f"  Phase A sensors: {', '.join(detected)}")
                 print(f"  Fusion capabilities: {', '.join(caps)}")
             else:
                 print("  Phase A sensors: none detected (WiFi-only mode)")
@@ -585,12 +598,23 @@ class SensingWebSocketServer:
 # ---------------------------------------------------------------------------
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="RuView Sensing WebSocket Server")
+    parser.add_argument(
+        "--simulate-sensors",
+        action="store_true",
+        help="Use simulated Phase A sensors (no hardware needed)",
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
 
     server = SensingWebSocketServer()
+    server._use_simulated_sensors = args.simulate_sensors
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
