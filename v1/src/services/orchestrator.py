@@ -10,13 +10,11 @@ from contextlib import asynccontextmanager
 from v1.src.config.settings import Settings
 from v1.src.services.health_check import HealthCheckService
 from v1.src.services.metrics import MetricsService
-from v1.src.api.dependencies import (
-    get_hardware_service,
-    get_pose_service,
-    get_stream_service
-)
-from v1.src.api.websocket.connection_manager import connection_manager
-from v1.src.api.websocket.pose_stream import PoseStreamHandler
+
+# Lazy imports to break circular dependency:
+# dependencies.py → pose_service → services/__init__ → orchestrator → dependencies.py
+# These are imported at call sites instead of module level.
+# from v1.src.api.dependencies import get_hardware_service, get_pose_service, get_stream_service
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +38,12 @@ class ServiceOrchestrator:
         self.pose_service = None
         self.stream_service = None
         self.pose_stream_handler = None
+
+    @staticmethod
+    def _get_connection_manager():
+        """Lazy import to break circular dependency."""
+        from v1.src.api.websocket.connection_manager import connection_manager
+        return connection_manager
     
     async def initialize(self):
         """Initialize all services."""
@@ -65,7 +69,7 @@ class ServiceOrchestrator:
                 'pose': self.pose_service,
                 'stream': self.stream_service,
                 'pose_stream_handler': self.pose_stream_handler,
-                'connection_manager': connection_manager
+                'connection_manager': self._get_connection_manager()
             }
             
             self._initialized = True
@@ -78,22 +82,31 @@ class ServiceOrchestrator:
     
     async def _initialize_application_services(self):
         """Initialize application-specific services."""
+        # Lazy imports to break circular dependency with api.dependencies
+        from v1.src.api.dependencies import (
+            get_hardware_service,
+            get_pose_service,
+            get_stream_service,
+        )
+        from v1.src.api.websocket.connection_manager import connection_manager
+        from v1.src.api.websocket.pose_stream import PoseStreamHandler
+
         try:
             # Initialize hardware service
             self.hardware_service = get_hardware_service()
             await self.hardware_service.initialize()
             logger.info("Hardware service initialized")
-            
+
             # Initialize pose service
             self.pose_service = get_pose_service()
             await self.pose_service.initialize()
             logger.info("Pose service initialized")
-            
+
             # Initialize stream service
             self.stream_service = get_stream_service()
             await self.stream_service.initialize()
             logger.info("Stream service initialized")
-            
+
             # Initialize pose stream handler
             self.pose_stream_handler = PoseStreamHandler(
                 connection_manager=connection_manager,
@@ -229,7 +242,7 @@ class ServiceOrchestrator:
                 await self.pose_stream_handler.shutdown()
             
             # Shutdown connection manager
-            await connection_manager.shutdown()
+            await self._get_connection_manager().shutdown()
             
             # Shutdown application services
             await self._shutdown_application_services()
@@ -309,7 +322,7 @@ class ServiceOrchestrator:
                 await self.stream_service.reset()
             
             # Reset connection manager
-            await connection_manager.reset()
+            await self._get_connection_manager().reset()
             
             logger.info("All services reset successfully")
             
