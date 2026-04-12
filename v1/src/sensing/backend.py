@@ -41,6 +41,20 @@ class Capability(Enum):
     LOCATION = auto()
     POSE = auto()
 
+    # Phase A sensor capabilities
+    DISTANCE = auto()
+    MULTI_TARGET = auto()
+    HEART_RATE = auto()
+    BREATHING_RATE = auto()
+    AIR_QUALITY = auto()
+    THERMAL_IMAGE = auto()
+    TEMPERATURE = auto()
+    HUMIDITY = auto()
+    PRESSURE = auto()
+    GAS_RESISTANCE = auto()
+    AUDIO_LEVEL = auto()
+    AUDIO_STREAM = auto()
+
 
 # ---------------------------------------------------------------------------
 # Backend protocol
