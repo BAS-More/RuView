@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
 # Import custom array type for compatibility
-from src.database.model_types import StringArray, FloatArray
+from v1.src.database.model_types import StringArray, FloatArray
 
 Base = declarative_base()
 

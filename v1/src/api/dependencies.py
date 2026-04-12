@@ -9,11 +9,11 @@ from functools import lru_cache
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from src.config.settings import get_settings
-from src.config.domains import get_domain_config
-from src.services.pose_service import PoseService
-from src.services.stream_service import StreamService
-from src.services.hardware_service import HardwareService
+from v1.src.config.settings import get_settings
+from v1.src.config.domains import get_domain_config
+from v1.src.services.pose_service import PoseService
+from v1.src.services.stream_service import StreamService
+from v1.src.services.hardware_service import HardwareService
 
 logger = logging.getLogger(__name__)
 

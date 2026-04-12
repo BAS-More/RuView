@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from jose import JWTError, jwt
 
-from src.config.settings import get_settings
+from v1.src.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 

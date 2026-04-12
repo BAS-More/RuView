@@ -9,8 +9,8 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from src.config.settings import Settings
-from src.logger import get_logger
+from v1.src.config.settings import Settings
+from v1.src.logger import get_logger
 
 logger = get_logger(__name__)
 

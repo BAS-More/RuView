@@ -8,7 +8,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, HTTPException, status
 
-from src.api.middleware.auth import token_blacklist
+from v1.src.api.middleware.auth import token_blacklist
 
 logger = logging.getLogger(__name__)
 

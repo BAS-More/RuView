@@ -11,9 +11,9 @@ from datetime import datetime
 from fastapi import WebSocket
 from pydantic import BaseModel, Field
 
-from src.api.websocket.connection_manager import ConnectionManager
-from src.services.pose_service import PoseService
-from src.services.stream_service import StreamService
+from v1.src.api.websocket.connection_manager import ConnectionManager
+from v1.src.services.pose_service import PoseService
+from v1.src.services.stream_service import StreamService
 
 logger = logging.getLogger(__name__)
 

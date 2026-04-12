@@ -10,15 +10,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from src.api.dependencies import (
+from v1.src.api.dependencies import (
     get_pose_service,
     get_hardware_service,
     get_current_user,
     require_auth
 )
-from src.services.pose_service import PoseService
-from src.services.hardware_service import HardwareService
-from src.config.settings import get_settings
+from v1.src.services.pose_service import PoseService
+from v1.src.services.hardware_service import HardwareService
+from v1.src.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

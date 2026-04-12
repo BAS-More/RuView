@@ -17,8 +17,8 @@ project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import the models and settings
-from src.database.models import Base
-from src.config.settings import get_settings
+from v1.src.database.models import Base
+from v1.src.config.settings import get_settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

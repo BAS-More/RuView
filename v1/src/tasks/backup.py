@@ -15,10 +15,10 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.settings import Settings
-from src.database.connection import get_database_manager
-from src.database.models import Device, Session, CSIData, PoseDetection, SystemMetric, AuditLog
-from src.logger import get_logger
+from v1.src.config.settings import Settings
+from v1.src.database.connection import get_database_manager
+from v1.src.database.models import Device, Session, CSIData, PoseDetection, SystemMetric, AuditLog
+from v1.src.logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from src.api.dependencies import get_current_user
-from src.config.settings import get_settings
+from v1.src.api.dependencies import get_current_user
+from v1.src.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

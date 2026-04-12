@@ -16,8 +16,8 @@ from sqlalchemy.exc import SQLAlchemyError, DisconnectionError
 import redis.asyncio as redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from src.config.settings import Settings
-from src.logger import get_logger
+from v1.src.config.settings import Settings
+from v1.src.logger import get_logger
 
 logger = get_logger(__name__)
 

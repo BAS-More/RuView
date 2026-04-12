@@ -11,12 +11,12 @@ from contextlib import asynccontextmanager
 from sqlalchemy import delete, select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.settings import Settings
-from src.database.connection import get_database_manager
-from src.database.models import (
+from v1.src.config.settings import Settings
+from v1.src.database.connection import get_database_manager
+from v1.src.database.models import (
     CSIData, PoseDetection, SystemMetric, AuditLog, Session, Device
 )
-from src.logger import get_logger
+from v1.src.logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -12,15 +12,15 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPExce
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from src.api.dependencies import (
+from v1.src.api.dependencies import (
     get_stream_service,
     get_pose_service,
     get_current_user_ws,
     require_auth
 )
-from src.api.websocket.connection_manager import connection_manager
-from src.services.stream_service import StreamService
-from src.services.pose_service import PoseService
+from v1.src.api.websocket.connection_manager import connection_manager
+from v1.src.services.stream_service import StreamService
+from v1.src.services.pose_service import PoseService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

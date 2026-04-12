@@ -15,14 +15,14 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.config.settings import get_settings
-from src.config.domains import get_domain_config
-from src.api.routers import pose, stream, health, auth
-from src.api.middleware.auth import AuthMiddleware
-from src.api.middleware.rate_limit import RateLimitMiddleware
-from src.api.dependencies import get_pose_service, get_stream_service, get_hardware_service
-from src.api.websocket.connection_manager import connection_manager
-from src.api.websocket.pose_stream import PoseStreamHandler
+from v1.src.config.settings import get_settings
+from v1.src.config.domains import get_domain_config
+from v1.src.api.routers import pose, stream, health, auth
+from v1.src.api.middleware.auth import AuthMiddleware
+from v1.src.api.middleware.rate_limit import RateLimitMiddleware
+from v1.src.api.dependencies import get_pose_service, get_stream_service, get_hardware_service
+from v1.src.api.websocket.connection_manager import connection_manager
+from v1.src.api.websocket.pose_stream import PoseStreamHandler
 
 # Configure logging
 settings = get_settings()
