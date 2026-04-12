@@ -14,11 +14,11 @@ from typing import Optional
 # Add src to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.config.settings import get_settings, validate_settings
-from src.logger import setup_logging
-from src.app import create_app
-from src.services.orchestrator import ServiceOrchestrator
-from src.cli import create_cli
+from v1.src.config.settings import get_settings, validate_settings
+from v1.src.logger import setup_logging
+from v1.src.app import create_app
+from v1.src.services.orchestrator import ServiceOrchestrator
+from v1.src.cli import create_cli
 
 
 def setup_signal_handlers(orchestrator: ServiceOrchestrator):

@@ -7,16 +7,16 @@ import logging
 from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
 
-from src.config.settings import Settings
-from src.services.health_check import HealthCheckService
-from src.services.metrics import MetricsService
-from src.api.dependencies import (
+from v1.src.config.settings import Settings
+from v1.src.services.health_check import HealthCheckService
+from v1.src.services.metrics import MetricsService
+from v1.src.api.dependencies import (
     get_hardware_service,
     get_pose_service,
     get_stream_service
 )
-from src.api.websocket.connection_manager import connection_manager
-from src.api.websocket.pose_stream import PoseStreamHandler
+from v1.src.api.websocket.connection_manager import connection_manager
+from v1.src.api.websocket.pose_stream import PoseStreamHandler
 
 logger = logging.getLogger(__name__)
 

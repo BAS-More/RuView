@@ -10,7 +10,7 @@ from fastapi import Request, Response
 from fastapi.middleware.cors import CORSMiddleware as FastAPICORSMiddleware
 from starlette.types import ASGIApp
 
-from src.config.settings import Settings
+from v1.src.config.settings import Settings
 
 logger = logging.getLogger(__name__)
 

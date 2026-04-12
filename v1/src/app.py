@@ -13,13 +13,13 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.config.settings import Settings
-from src.services.orchestrator import ServiceOrchestrator
-from src.middleware.auth import AuthenticationMiddleware
-from src.middleware.rate_limit import RateLimitMiddleware
-from src.middleware.error_handler import ErrorHandlingMiddleware
-from src.api.routers import pose, stream, health
-from src.api.websocket.connection_manager import connection_manager
+from v1.src.config.settings import Settings
+from v1.src.services.orchestrator import ServiceOrchestrator
+from v1.src.middleware.auth import AuthenticationMiddleware
+from v1.src.middleware.rate_limit import RateLimitMiddleware
+from v1.src.middleware.error_handler import ErrorHandlingMiddleware
+from v1.src.api.routers import pose, stream, health
+from v1.src.api.websocket.connection_manager import connection_manager
 
 logger = logging.getLogger(__name__)
 

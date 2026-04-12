@@ -12,8 +12,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from src.config.settings import Settings
-from src.logger import set_request_context
+from v1.src.config.settings import Settings
+from v1.src.logger import set_request_context
 
 logger = logging.getLogger(__name__)
 

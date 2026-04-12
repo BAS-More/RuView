@@ -10,9 +10,9 @@ from datetime import datetime, timedelta
 
 import numpy as np
 
-from src.config.settings import Settings
-from src.config.domains import DomainConfig
-from src.core.router_interface import RouterInterface
+from v1.src.config.settings import Settings
+from v1.src.config.domains import DomainConfig
+from v1.src.core.router_interface import RouterInterface
 
 logger = logging.getLogger(__name__)
 

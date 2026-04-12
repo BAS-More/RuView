@@ -12,8 +12,8 @@ from collections import deque
 import numpy as np
 from fastapi import WebSocket
 
-from src.config.settings import Settings
-from src.config.domains import DomainConfig
+from v1.src.config.settings import Settings
+from v1.src.config.domains import DomainConfig
 
 logger = logging.getLogger(__name__)
 

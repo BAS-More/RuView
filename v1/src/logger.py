@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from src.config.settings import Settings
+from v1.src.config.settings import Settings
 
 
 class ColoredFormatter(logging.Formatter):

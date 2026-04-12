@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from functools import lru_cache
 
-from src.config.settings import Settings, get_settings
-from src.config.domains import DomainConfig, get_domain_config
+from v1.src.config.settings import Settings, get_settings
+from v1.src.config.domains import DomainConfig, get_domain_config
 
 logger = logging.getLogger(__name__)
 

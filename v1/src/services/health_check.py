@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from enum import Enum
 
-from src.config.settings import Settings
+from v1.src.config.settings import Settings
 
 logger = logging.getLogger(__name__)
 

@@ -7,11 +7,11 @@ import click
 import sys
 from typing import Optional
 
-from src.config.settings import get_settings, load_settings_from_file
-from src.logger import setup_logging, get_logger
-from src.commands.start import start_command
-from src.commands.stop import stop_command
-from src.commands.status import status_command
+from v1.src.config.settings import get_settings, load_settings_from_file
+from v1.src.logger import setup_logging, get_logger
+from v1.src.commands.start import start_command
+from v1.src.commands.stop import stop_command
+from v1.src.commands.status import status_command
 
 # Get default settings and setup logging for CLI
 settings = get_settings()

@@ -14,8 +14,8 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import ValidationError
 
-from src.config.settings import Settings
-from src.logger import get_request_context
+from v1.src.config.settings import Settings
+from v1.src.logger import get_request_context
 
 logger = logging.getLogger(__name__)
 
