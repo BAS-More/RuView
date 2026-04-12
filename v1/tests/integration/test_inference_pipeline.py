@@ -2,10 +2,10 @@ import pytest
 import torch
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
-from src.core.csi_processor import CSIProcessor
-from src.core.phase_sanitizer import PhaseSanitizer
-from src.models.modality_translation import ModalityTranslationNetwork
-from src.models.densepose_head import DensePoseHead
+from v1.src.core.csi_processor import CSIProcessor
+from v1.src.core.phase_sanitizer import PhaseSanitizer
+from v1.src.models.modality_translation import ModalityTranslationNetwork
+from v1.src.models.densepose_head import DensePoseHead
 
 
 class TestInferencePipeline:

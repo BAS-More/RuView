@@ -16,9 +16,9 @@ import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from src.models.densepose_head import DensePoseHead
-from src.models.modality_translation import ModalityTranslationNetwork
-from src.testing.mock_csi_generator import MockCSIGenerator
+from v1.src.models.densepose_head import DensePoseHead
+from v1.src.models.modality_translation import ModalityTranslationNetwork
+from v1.src.testing.mock_csi_generator import MockCSIGenerator
 
 
 def get_memory_mb():

@@ -2,10 +2,10 @@ import pytest
 import torch
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
-from src.core.csi_processor import CSIProcessor
-from src.core.phase_sanitizer import PhaseSanitizer
-from src.hardware.router_interface import RouterInterface
-from src.hardware.csi_extractor import CSIExtractor
+from v1.src.core.csi_processor import CSIProcessor
+from v1.src.core.phase_sanitizer import PhaseSanitizer
+from v1.src.hardware.router_interface import RouterInterface
+from v1.src.hardware.csi_extractor import CSIExtractor
 
 
 class TestCSIPipeline:

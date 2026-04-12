@@ -14,15 +14,15 @@ from fastapi.testclient import TestClient
 from fastapi import FastAPI
 import httpx
 
-from src.api.dependencies import (
+from v1.src.api.dependencies import (
     get_pose_service,
     get_stream_service,
     get_hardware_service,
     get_current_user
 )
-from src.api.routers.health import router as health_router
-from src.api.routers.pose import router as pose_router
-from src.api.routers.stream import router as stream_router
+from v1.src.api.routers.health import router as health_router
+from v1.src.api.routers.pose import router as pose_router
+from v1.src.api.routers.stream import router as stream_router
 
 
 class TestAPIEndpoints:

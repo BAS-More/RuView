@@ -12,13 +12,13 @@ from pathlib import Path
 from typing import Dict, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.config.settings import get_settings
-from src.app import app
-from src.database.connection import get_database_manager
-from src.services.orchestrator import get_service_orchestrator
-from src.tasks.cleanup import get_cleanup_manager
-from src.tasks.monitoring import get_monitoring_manager
-from src.tasks.backup import get_backup_manager
+from v1.src.config.settings import get_settings
+from v1.src.app import app
+from v1.src.database.connection import get_database_manager
+from v1.src.services.orchestrator import get_service_orchestrator
+from v1.src.tasks.cleanup import get_cleanup_manager
+from v1.src.tasks.monitoring import get_monitoring_manager
+from v1.src.tasks.backup import get_backup_manager
 
 
 class TestFullSystemIntegration:

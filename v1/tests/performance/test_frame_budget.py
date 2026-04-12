@@ -9,7 +9,7 @@ import statistics
 import pytest
 import numpy as np
 
-from src.core.csi_processor import CSIProcessor
+from v1.src.core.csi_processor import CSIProcessor
 
 
 def _make_config():
