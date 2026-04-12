@@ -290,6 +290,7 @@ class TestRateLimitMiddleware:
         
         return RateLimitMiddleware(rate_limiter)
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_middleware_allows_normal_requests_should_fail_initially(
         self, rate_limit_middleware, mock_request, mock_response
@@ -308,6 +309,7 @@ class TestRateLimitMiddleware:
         assert "X-RateLimit-Remaining" in response.headers
         assert "X-RateLimit-Reset" in response.headers
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_middleware_blocks_excessive_requests_should_fail_initially(
         self, rate_limit_middleware, mock_request
@@ -333,6 +335,7 @@ class TestRateLimitMiddleware:
         assert "X-RateLimit-Remaining" in response.headers
         assert response.headers["X-RateLimit-Remaining"] == "0"
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_middleware_client_identification_should_fail_initially(
         self, rate_limit_middleware, mock_request

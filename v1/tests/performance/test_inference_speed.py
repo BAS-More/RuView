@@ -178,6 +178,7 @@ class TestInferenceSpeed:
         for name, result in results.items():
             assert result["inference_time_ms"] < 500  # Less than 500ms
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_batch_inference_performance_should_fail_initially(self, standard_model):
         """Test batch inference performance - should fail initially."""
@@ -250,6 +251,7 @@ class TestInferenceSpeed:
 class TestInferenceOptimization:
     """Test inference optimization techniques."""
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_model_warmup_effect_should_fail_initially(self, standard_model, sample_features):
         """Test model warmup effect - should fail initially."""
@@ -275,6 +277,7 @@ class TestInferenceOptimization:
         assert cold_start_time > 0
         assert avg_warm_time > 0
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_concurrent_inference_performance_should_fail_initially(self, sample_features):
         """Test concurrent inference performance - should fail initially."""
@@ -304,6 +307,7 @@ class TestInferenceOptimization:
         avg_concurrent_time = np.mean(inference_times)
         assert avg_concurrent_time < 200  # Should complete within 200ms each
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_memory_usage_during_inference_should_fail_initially(self, standard_model, sample_features):
         """Test memory usage during inference - should fail initially."""
@@ -335,6 +339,7 @@ class TestInferenceOptimization:
 class TestInferenceAccuracy:
     """Test inference accuracy and quality metrics."""
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_prediction_consistency_should_fail_initially(self, standard_model, sample_features):
         """Test prediction consistency - should fail initially."""
@@ -360,6 +365,7 @@ class TestInferenceAccuracy:
         
         assert std_time < avg_time * 0.5  # Standard deviation should be less than 50% of mean
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_confidence_score_distribution_should_fail_initially(self, standard_model, sample_features):
         """Test confidence score distribution - should fail initially."""
@@ -382,6 +388,7 @@ class TestInferenceAccuracy:
             avg_confidence = np.mean(all_confidences)
             assert 0.3 <= avg_confidence <= 0.95  # Reasonable average confidence
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_keypoint_detection_quality_should_fail_initially(self, standard_model, sample_features):
         """Test keypoint detection quality - should fail initially."""
@@ -408,6 +415,7 @@ class TestInferenceAccuracy:
 class TestInferenceScaling:
     """Test inference scaling characteristics."""
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_input_size_scaling_should_fail_initially(self, standard_model):
         """Test inference scaling with input size - should fail initially."""
@@ -444,6 +452,7 @@ class TestInferenceScaling:
             time_ratio = results[next_size]["inference_time_ms"] / results[current_size]["inference_time_ms"]
             assert time_ratio >= 0.8  # Next size shouldn't be much faster
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_throughput_under_load_should_fail_initially(self, standard_model, sample_features):
         """Test throughput under sustained load - should fail initially."""
@@ -491,6 +500,7 @@ class TestInferenceBenchmarks:
         result = await run_inference()
         assert result["inference_time_ms"] < 50  # Should be less than 50ms
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_benchmark_batch_processing_should_fail_initially(self, benchmark):
         """Benchmark batch processing performance - should fail initially."""

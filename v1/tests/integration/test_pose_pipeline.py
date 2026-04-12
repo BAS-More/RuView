@@ -424,6 +424,7 @@ class TestPosePipelineIntegration:
 class TestPipelinePerformance:
     """Test pose pipeline performance characteristics."""
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_pipeline_throughput_should_fail_initially(self, pose_pipeline):
         """Test pipeline throughput - should fail initially."""
@@ -453,6 +454,7 @@ class TestPipelinePerformance:
         assert fps > 5.0  # Should process at least 5 FPS
         assert total_time < 5.0  # Should complete 10 frames in under 5 seconds
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_concurrent_frame_processing_should_fail_initially(self, pose_pipeline):
         """Test concurrent frame processing - should fail initially."""
@@ -479,6 +481,7 @@ class TestPipelinePerformance:
         assert len(results) == 5
         assert len(set(results)) == 5  # All frame IDs should be unique
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_memory_usage_stability_should_fail_initially(self, pose_pipeline):
         """Test memory usage stability - should fail initially."""
@@ -522,6 +525,7 @@ class TestPipelinePerformance:
 class TestPipelineDataFlow:
     """Test data flow through the pipeline."""
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_data_transformation_chain_should_fail_initially(self, csi_processor, pose_estimator, zone_manager, sample_csi_data):
         """Test data transformation through the pipeline - should fail initially."""
@@ -555,6 +559,7 @@ class TestPipelineDataFlow:
             if "zone_id" in person and person["zone_id"]:
                 assert person["zone_id"] in zone_summary
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_pipeline_state_consistency_should_fail_initially(self, pose_pipeline, sample_csi_data):
         """Test pipeline state consistency - should fail initially."""

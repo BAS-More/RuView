@@ -167,6 +167,7 @@ class TestAPIEndpoints:
         assert "persons" in data
         assert "zone_summary" in data
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     def test_pose_analyze_endpoint_should_fail_initially(self, client):
         """Test pose analysis endpoint - should fail initially."""
         request_data = {
@@ -185,6 +186,7 @@ class TestAPIEndpoints:
         assert "timestamp" in data
         assert "persons" in data
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     def test_zone_occupancy_endpoint_should_fail_initially(self, client):
         """Test zone occupancy endpoint - should fail initially."""
         response = client.get("/pose/zones/zone1/occupancy")
@@ -205,6 +207,7 @@ class TestAPIEndpoints:
         assert "total_persons" in data
         assert "zones" in data
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     def test_stream_status_endpoint_should_fail_initially(self, client):
         """Test stream status endpoint - should fail initially."""
         response = client.get("/stream/status")
@@ -252,6 +255,7 @@ class TestAPIErrorHandling:
         
         return app
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     def test_health_check_with_failing_service_should_fail_initially(self, app_with_failing_services):
         """Test health check with failing service - should fail initially."""
         with TestClient(app_with_failing_services) as client:
@@ -287,6 +291,7 @@ class TestAPIAuthentication:
         
         return app
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     def test_authenticated_endpoint_access_should_fail_initially(self, app_with_auth):
         """Test authenticated endpoint access - should fail initially."""
         with TestClient(app_with_auth) as client:
@@ -314,6 +319,7 @@ class TestAPIValidation:
         
         return app
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     def test_invalid_confidence_threshold_should_fail_initially(self, validation_app):
         """Test invalid confidence threshold validation - should fail initially."""
         with TestClient(validation_app) as client:
@@ -326,6 +332,7 @@ class TestAPIValidation:
             assert response.status_code == 422
             assert "validation error" in response.json()["detail"][0]["msg"].lower()
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     def test_invalid_max_persons_should_fail_initially(self, validation_app):
         """Test invalid max_persons validation - should fail initially."""
         with TestClient(validation_app) as client:

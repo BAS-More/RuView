@@ -406,3 +406,17 @@ class ServiceOrchestrator:
             yield self
         finally:
             await self.shutdown()
+
+
+def get_service_orchestrator(settings: Optional[Settings] = None) -> ServiceOrchestrator:
+    """Factory function for ServiceOrchestrator.
+
+    Parameters
+    ----------
+    settings : Settings, optional
+        Application settings. Loaded via ``get_settings()`` if not provided.
+    """
+    if settings is None:
+        from v1.src.config.settings import get_settings
+        settings = get_settings()
+    return ServiceOrchestrator(settings)

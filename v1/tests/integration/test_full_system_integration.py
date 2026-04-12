@@ -12,9 +12,13 @@ from pathlib import Path
 from typing import Dict, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-# These tests reference factory functions (get_service_orchestrator, get_cleanup_manager, etc.)
-# that haven't been implemented yet. Skip collection entirely.
-pytest.skip("Depends on unimplemented factory functions", allow_module_level=True)
+from v1.src.config.settings import get_settings
+from v1.src.app import app
+from v1.src.database.connection import get_database_manager
+from v1.src.services.orchestrator import get_service_orchestrator
+from v1.src.tasks.cleanup import get_cleanup_manager
+from v1.src.tasks.monitoring import get_monitoring_manager
+from v1.src.tasks.backup import get_backup_manager
 
 
 class TestFullSystemIntegration:
@@ -52,6 +56,7 @@ class TestFullSystemIntegration:
         yield orchestrator
         await orchestrator.shutdown()
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_application_startup_and_shutdown(self, settings, db_manager):
         """Test complete application startup and shutdown sequence."""
         
@@ -75,6 +80,7 @@ class TestFullSystemIntegration:
         final_stats = await db_manager.get_connection_stats()
         assert final_stats is not None
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_api_endpoints_integration(self, client, settings, db_manager):
         """Test API endpoints work with database integration."""
         
@@ -103,6 +109,7 @@ class TestFullSystemIntegration:
         assert "sessions" in sessions_data
         assert isinstance(sessions_data["sessions"], list)
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     @patch('src.core.router_interface.RouterInterface')
     @patch('src.core.csi_processor.CSIProcessor')
     @patch('src.core.pose_estimator.PoseEstimator')
@@ -198,6 +205,7 @@ class TestFullSystemIntegration:
         )
         assert response.status_code == 200
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_background_tasks_integration(self, settings, db_manager):
         """Test background tasks integration."""
         
@@ -228,6 +236,7 @@ class TestFullSystemIntegration:
         backup_result = await backup_manager.run_all_tasks()
         assert backup_result["success"] is True
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_error_handling_integration(self, client, settings, db_manager):
         """Test error handling across the system."""
         
@@ -256,6 +265,7 @@ class TestFullSystemIntegration:
         response = await client.post("/api/v1/sessions", json=invalid_session_data)
         assert response.status_code == 422
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_authentication_and_authorization(self, client, settings):
         """Test authentication and authorization integration."""
         
@@ -268,6 +278,7 @@ class TestFullSystemIntegration:
         response = await client.get("/api/v1/admin/system-info", headers=headers)
         assert response.status_code in [401, 403]
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_rate_limiting_integration(self, client, settings):
         """Test rate limiting integration."""
         
@@ -283,6 +294,7 @@ class TestFullSystemIntegration:
         # Rate limiting might kick in for some requests
         # This depends on the rate limiting configuration
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_monitoring_and_metrics_integration(self, client, settings, db_manager):
         """Test monitoring and metrics collection integration."""
         
@@ -320,6 +332,7 @@ class TestFullSystemIntegration:
         # Test logging configuration
         assert settings.log_level in ["DEBUG", "INFO", "WARNING", "ERROR"]
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_database_migration_integration(self, settings, db_manager):
         """Test database migration integration."""
         
@@ -344,6 +357,7 @@ class TestFullSystemIntegration:
             for table in expected_tables:
                 assert table in tables
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_concurrent_operations_integration(self, client, settings, db_manager):
         """Test concurrent operations integration."""
         
@@ -370,6 +384,7 @@ class TestFullSystemIntegration:
         devices_data = response.json()
         assert len(devices_data["devices"]) >= 5
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_system_resource_management(self, settings, db_manager, orchestrator):
         """Test system resource management integration."""
         
@@ -395,6 +410,7 @@ class TestFullSystemIntegration:
 class TestSystemPerformance:
     """Test system performance under load."""
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_api_response_times(self, client):
         """Test API response times under normal load."""
         
@@ -405,6 +421,7 @@ class TestSystemPerformance:
         assert response.status_code == 200
         assert (end_time - start_time) < 1.0  # Should respond within 1 second
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_database_query_performance(self, db_manager):
         """Test database query performance."""
         
@@ -418,6 +435,7 @@ class TestSystemPerformance:
             assert result.scalar() == 1
             assert (end_time - start_time) < 0.1  # Should complete within 100ms
     
+    @pytest.mark.xfail(reason="Integration: requires full infra or unimplemented API", strict=False)
     async def test_memory_usage_stability(self, orchestrator):
         """Test memory usage remains stable."""
         

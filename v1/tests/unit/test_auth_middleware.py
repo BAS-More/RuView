@@ -51,26 +51,38 @@ class TestTokenManager:
         assert "iat" in payload
 
 
+def _patch_bcrypt_about():
+    """Fix passlib compatibility with bcrypt >= 4.1 on Python 3.14+.
+
+    passlib reads ``bcrypt.__about__.__version__`` which was removed in
+    newer bcrypt versions. Inject a shim so passlib's backend detection
+    doesn't crash.
+    """
+    try:
+        import bcrypt
+        if not hasattr(bcrypt, "__about__"):
+            import types
+            about = types.ModuleType("bcrypt.__about__")
+            about.__version__ = getattr(bcrypt, "__version__", "4.0.0")
+            bcrypt.__about__ = about
+    except ImportError:
+        pass
+
+_patch_bcrypt_about()
+
+
 class TestUserManager:
     def test_create_user(self):
         from v1.src.middleware.auth import UserManager
         um = UserManager()
         assert um.get_user("nonexistent") is None
 
-    @pytest.mark.skipif(
-        __import__("sys").version_info >= (3, 14),
-        reason="passlib bcrypt backend incompatible with Python 3.14+",
-    )
     def test_hash_password(self):
         from v1.src.middleware.auth import UserManager
         hashed = UserManager.hash_password("secret123")
         assert hashed != "secret123"
         assert len(hashed) > 20
 
-    @pytest.mark.skipif(
-        __import__("sys").version_info >= (3, 14),
-        reason="passlib bcrypt backend incompatible with Python 3.14+",
-    )
     def test_verify_password(self):
         from v1.src.middleware.auth import UserManager
         hashed = UserManager.hash_password("secret123")

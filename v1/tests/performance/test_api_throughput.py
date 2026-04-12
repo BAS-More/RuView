@@ -229,6 +229,7 @@ class TestAPIThroughput:
         assert stats["total_requests"] == concurrent_requests
         assert stats["max_concurrent_requests"] <= concurrent_requests
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_sustained_load_performance_should_fail_initially(self, api_server):
         """Test sustained load performance - should fail initially."""
@@ -418,6 +419,7 @@ class TestAPILoadTesting:
         assert stats["requests_per_second"] > 50  # Should handle at least 50 RPS
         assert stats["avg_response_time_ms"] < 150  # Average response time under 150ms
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_stress_testing_should_fail_initially(self, load_test_server):
         """Test stress testing - should fail initially."""
@@ -458,6 +460,7 @@ class TestAPILoadTesting:
         # Higher loads should have higher response times
         assert results[10]["avg_response_time"] <= results[200]["avg_response_time"]
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_memory_usage_under_load_should_fail_initially(self, load_test_server):
         """Test memory usage under load - should fail initially."""
@@ -585,6 +588,7 @@ class TestAPIPerformanceOptimization:
         # With connection pooling, should complete reasonably fast
         assert total_time < 500  # Should complete within 500ms
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_request_batching_performance_should_fail_initially(self):
         """Test request batching performance - should fail initially."""

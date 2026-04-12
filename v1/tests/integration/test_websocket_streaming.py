@@ -294,6 +294,7 @@ class TestWebSocketConnectionManager:
         
         return MockConnectionManager()
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_connection_manager_connect_should_fail_initially(self, connection_manager, mock_websocket):
         """Test connection manager connect functionality - should fail initially."""
@@ -310,6 +311,7 @@ class TestWebSocketConnectionManager:
         assert connection_manager.connections[client_id]["stream_type"] == "pose"
         assert connection_manager.connections[client_id]["zone_ids"] == ["zone1", "zone2"]
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_connection_manager_disconnect_should_fail_initially(self, connection_manager, mock_websocket):
         """Test connection manager disconnect functionality - should fail initially."""

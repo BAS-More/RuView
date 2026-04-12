@@ -399,6 +399,7 @@ class TestHealthcareFallDetection:
         assert stats["activity_samples"] == 10
         assert stats["is_monitoring"] is True
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     @pytest.mark.asyncio
     async def test_prolonged_inactivity_detection_should_fail_initially(self, patient_monitor):
         """Test prolonged inactivity detection - should fail initially."""

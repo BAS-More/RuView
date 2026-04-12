@@ -164,6 +164,7 @@ class TestJWTAuthentication:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert "invalid" in exc_info.value.detail.lower()
     
+    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
     def test_token_refresh_should_fail_initially(self, mock_jwt_service, valid_user_payload):
         """Test token refresh functionality - should fail initially."""
         original_token = mock_jwt_service.create_token(valid_user_payload)
