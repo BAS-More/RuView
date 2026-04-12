@@ -18,6 +18,11 @@ export class SensingTab {
     this._unsubState = null;
     this._resizeObserver = null;
     this._threeLoaded = false;
+
+    // Sparkline history buffers
+    this._hrHistory = [];
+    this._brHistory = [];
+    this._maxSparklineLen = 60;
   }
 
   async init() {
@@ -114,17 +119,19 @@ export class SensingTab {
             </div>
             <div class="sensing-details" id="fusionSources" style="font-size:11px;color:#888;margin-bottom:8px;"></div>
 
-            <!-- Vitals -->
+            <!-- Vitals with sparklines -->
             <div class="sensing-fusion-vitals" id="fusionVitals" style="display:none">
               <div class="sensing-detail-row">
                 <span>Heart Rate</span><span id="fusionHR">-- bpm</span>
               </div>
+              <canvas id="fusionHRSparkline" width="180" height="30" style="margin:-2px 0 4px 0;"></canvas>
               <div class="sensing-detail-row">
                 <span>Breathing</span><span id="fusionBR">-- bpm</span>
               </div>
+              <canvas id="fusionBRSparkline" width="180" height="30" style="margin:-2px 0 4px 0;"></canvas>
             </div>
 
-            <!-- Distance -->
+            <!-- Distance + target radar -->
             <div class="sensing-fusion-distance" id="fusionDistance" style="display:none">
               <div class="sensing-detail-row">
                 <span>Nearest</span><span id="fusionDist">-- mm</span>
@@ -132,6 +139,7 @@ export class SensingTab {
               <div class="sensing-detail-row">
                 <span>Targets</span><span id="fusionTargets">0</span>
               </div>
+              <canvas id="fusionRadar" width="180" height="120" style="margin:4px 0;background:rgba(0,0,0,0.2);border-radius:6px;"></canvas>
             </div>
 
             <!-- Environment -->
@@ -160,11 +168,12 @@ export class SensingTab {
               </div>
             </div>
 
-            <!-- Thermal -->
+            <!-- Thermal with heatmap -->
             <div class="sensing-fusion-thermal" id="fusionThermal" style="display:none">
               <div class="sensing-detail-row">
                 <span>Thermal Max</span><span id="fusionThermalMax">-- C</span>
               </div>
+              <canvas id="fusionHeatmap" width="120" height="120" style="margin:4px 0;border-radius:4px;image-rendering:pixelated;"></canvas>
             </div>
 
             <!-- Audio -->
@@ -423,25 +432,41 @@ export class SensingTab {
       srcEl.textContent = (f.presence_sources || []).join(' + ') || 'none';
     }
 
-    // Vitals
+    // Vitals with sparklines
     const vitals = this.container.querySelector('#fusionVitals');
     if (vitals) {
       if (f.heart_rate_bpm != null || f.breathing_rate_bpm != null) {
         vitals.style.display = '';
         this._setText('fusionHR', f.heart_rate_bpm != null ? f.heart_rate_bpm.toFixed(0) + ' bpm' : '--');
         this._setText('fusionBR', f.breathing_rate_bpm != null ? f.breathing_rate_bpm.toFixed(1) + ' bpm' : '--');
+        // Update sparkline history
+        if (f.heart_rate_bpm != null) {
+          this._hrHistory.push(f.heart_rate_bpm);
+          if (this._hrHistory.length > this._maxSparklineLen) this._hrHistory.shift();
+          this._drawFusionSparkline('fusionHRSparkline', this._hrHistory, '#ff4466', 50, 110);
+        }
+        if (f.breathing_rate_bpm != null) {
+          this._brHistory.push(f.breathing_rate_bpm);
+          if (this._brHistory.length > this._maxSparklineLen) this._brHistory.shift();
+          this._drawFusionSparkline('fusionBRSparkline', this._brHistory, '#44aaff', 8, 30);
+        }
       } else {
         vitals.style.display = 'none';
       }
     }
 
-    // Distance
+    // Distance + radar
     const distEl = this.container.querySelector('#fusionDistance');
     if (distEl) {
       if (f.nearest_distance_mm != null) {
         distEl.style.display = '';
         this._setText('fusionDist', f.nearest_distance_mm + ' mm');
         this._setText('fusionTargets', String(f.target_count || 0));
+        // Draw target radar from raw sensor readings
+        const ld = data.sensors && data.sensors.ld2450;
+        if (ld && ld.targets) {
+          this._drawFusionRadar(ld.targets);
+        }
       } else {
         distEl.style.display = 'none';
       }
@@ -475,13 +500,18 @@ export class SensingTab {
       }
     }
 
-    // Thermal
+    // Thermal with heatmap
     const thEl = this.container.querySelector('#fusionThermal');
     if (thEl) {
       const th = f.thermal;
       if (th) {
         thEl.style.display = '';
         this._setText('fusionThermalMax', (th.max_c || 0).toFixed(1) + ' C');
+        // Draw 8x8 heatmap from raw sensor readings
+        const amg = data.sensors && data.sensors.amg8833;
+        if (amg && amg.grid) {
+          this._drawFusionHeatmap(amg.grid);
+        }
       } else {
         thEl.style.display = 'none';
       }
@@ -496,6 +526,88 @@ export class SensingTab {
         this._setText('fusionSPL', (au.db_spl || 0).toFixed(1) + ' dB');
       } else {
         auEl.style.display = 'none';
+      }
+    }
+  }
+
+  // ---- Fusion visualizations ---------------------------------------------
+
+  _drawFusionSparkline(canvasId, history, color, minVal, maxVal) {
+    const canvas = this.container.querySelector('#' + canvasId);
+    if (!canvas || history.length < 2) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const range = maxVal - minVal || 1;
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < history.length; i++) {
+      const x = (i / (history.length - 1)) * w;
+      const y = h - ((history[i] - minVal) / range) * h;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  _drawFusionRadar(targets) {
+    const canvas = this.container.querySelector('#fusionRadar');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const cx = w / 2, cy = h - 10;
+    const scale = Math.min(w, h) / 6000; // 3m range each side
+
+    // Draw range arcs
+    ctx.strokeStyle = 'rgba(50,184,198,0.2)';
+    ctx.lineWidth = 0.5;
+    for (const r of [1000, 2000, 3000]) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * scale, Math.PI, 2 * Math.PI);
+      ctx.stroke();
+    }
+
+    // Draw targets
+    if (!targets || !targets.length) return;
+    for (const t of targets) {
+      const tx = cx + (t.x_mm || 0) * scale;
+      const ty = cy - (t.y_mm || t.distance_mm || 0) * scale;
+      ctx.beginPath();
+      ctx.arc(tx, ty, 4, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ff6644';
+      ctx.fill();
+      ctx.strokeStyle = '#ff6644';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  _drawFusionHeatmap(grid) {
+    const canvas = this.container.querySelector('#fusionHeatmap');
+    if (!canvas || !grid || grid.length !== 8) return;
+    const ctx = canvas.getContext('2d');
+    const cellW = canvas.width / 8, cellH = canvas.height / 8;
+
+    // Find min/max for color mapping
+    let min = Infinity, max = -Infinity;
+    for (const row of grid) {
+      for (const v of row) {
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+    }
+    const range = max - min || 1;
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const t = (grid[r][c] - min) / range; // 0..1
+        // Blue (cold) -> Red (hot) via HSL
+        const hue = (1 - t) * 240; // 240=blue, 0=red
+        ctx.fillStyle = `hsl(${hue}, 80%, ${30 + t * 40}%)`;
+        ctx.fillRect(c * cellW, r * cellH, cellW, cellH);
       }
     }
   }
