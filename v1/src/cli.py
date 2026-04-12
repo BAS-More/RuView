@@ -374,6 +374,20 @@ async def _sensor_play(input_path: str, speed: float):
     click.echo(f"Playback complete: {n} frames")
 
 
+@sensor.command("export")
+@click.argument("input_path")
+@click.option("-o", "--output", default=None, help="Output CSV path (default: same name .csv)")
+def sensor_export(input_path: str, output: Optional[str]):
+    """Export a JSONL recording to CSV for analysis."""
+    from v1.src.sensing.csv_export import CsvExporter
+
+    if output is None:
+        output = input_path.rsplit(".", 1)[0] + ".csv"
+    exp = CsvExporter(input_path)
+    n = exp.export(output)
+    click.echo(f"Exported {n} rows to {output}")
+
+
 @cli.group()
 def db():
     """Database management commands."""
