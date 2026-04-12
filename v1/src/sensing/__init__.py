@@ -41,6 +41,10 @@ from v1.src.sensing.backend import (
     CommodityBackend,
     Capability,
 )
+from v1.src.sensing.multi_sensor_backend import (
+    MultiSensorBackend,
+    FusedSensingResult,
+)
 
 __all__ = [
     "LinuxWifiCollector",
@@ -55,4 +59,6 @@ __all__ = [
     "SensingBackend",
     "CommodityBackend",
     "Capability",
+    "MultiSensorBackend",
+    "FusedSensingResult",
 ]

@@ -307,8 +307,9 @@ def generate_signal_field(
 class SensingWebSocketServer:
     """Async WebSocket server that broadcasts sensing updates.
 
-    When Phase A sensors are available, their readings are merged into
-    each ``sensing_update`` broadcast alongside the WiFi CSI/RSSI data.
+    When Phase A sensors are available, uses ``MultiSensorBackend`` to
+    fuse WiFi CSI/RSSI with sensor data into a ``FusedSensingResult``
+    that is broadcast to all connected WebSocket clients.
     """
 
     def __init__(self) -> None:
@@ -321,7 +322,8 @@ class SensingWebSocketServer:
 
         # Phase A multi-modal sensor registry (lazy-initialised)
         self.sensor_registry = None
-        self._last_sensor_readings: Dict = {}
+        self._fusion_backend = None  # MultiSensorBackend when sensors available
+        self._last_fused = None      # Last FusedSensingResult
 
     def _create_collector(self):
         """Auto-detect data source: ESP32 UDP > platform WiFi > simulated.
@@ -406,9 +408,42 @@ class SensingWebSocketServer:
             "signal_field": signal_field,
         }
 
-        # Merge Phase A sensor readings if available
-        if self._last_sensor_readings:
-            msg["sensors"] = self._last_sensor_readings
+        # Merge fused multi-sensor data if available
+        if self._last_fused is not None:
+            fused = self._last_fused
+            msg["fusion"] = {
+                "presence": fused.presence,
+                "presence_sources": fused.presence_sources,
+                "fused_confidence": round(fused.fused_confidence, 3),
+            }
+            if fused.heart_rate_bpm is not None:
+                msg["fusion"]["heart_rate_bpm"] = fused.heart_rate_bpm
+            if fused.breathing_rate_bpm is not None:
+                msg["fusion"]["breathing_rate_bpm"] = fused.breathing_rate_bpm
+            if fused.nearest_distance_mm is not None:
+                msg["fusion"]["nearest_distance_mm"] = fused.nearest_distance_mm
+                msg["fusion"]["target_count"] = fused.target_count
+            if fused.temperature_c is not None:
+                msg["fusion"]["environment"] = {
+                    "temperature_c": fused.temperature_c,
+                    "humidity_pct": fused.humidity_pct,
+                    "pressure_hpa": fused.pressure_hpa,
+                }
+            if fused.tvoc_ppb is not None:
+                msg["fusion"]["air_quality"] = {
+                    "tvoc_ppb": fused.tvoc_ppb,
+                    "eco2_ppm": fused.eco2_ppm,
+                    "aqi": fused.aqi,
+                }
+            if fused.thermal_max_c is not None:
+                msg["fusion"]["thermal"] = {
+                    "max_c": fused.thermal_max_c,
+                    "presence": fused.thermal_presence,
+                }
+            if fused.db_spl is not None:
+                msg["fusion"]["audio"] = {"db_spl": fused.db_spl}
+            if fused.sensor_readings:
+                msg["sensors"] = fused.sensor_readings
 
         return json.dumps(msg)
 
@@ -449,8 +484,12 @@ class SensingWebSocketServer:
                     features = self.extractor.extract(samples)
                     result = self.classifier.classify(features)
 
-                    # Read Phase A sensors concurrently
-                    self._last_sensor_readings = await self._read_sensors()
+                    # Run fusion if multi-sensor backend is available
+                    if self._fusion_backend:
+                        try:
+                            self._last_fused = await self._fusion_backend.fuse()
+                        except Exception as exc:
+                            logger.debug("Fusion cycle error: %s", exc)
 
                     message = self._build_message(features, result)
                     await self._broadcast(message)
@@ -473,29 +512,31 @@ class SensingWebSocketServer:
             await asyncio.sleep(TICK_INTERVAL)
 
     async def _init_sensor_registry(self) -> None:
-        """Probe Phase A sensors and register any that respond."""
+        """Probe Phase A sensors and create MultiSensorBackend if any respond."""
         try:
             from v1.src.hardware.sensor_registry import SensorRegistry
+            from v1.src.sensing.multi_sensor_backend import MultiSensorBackend
+            from v1.src.sensing.backend import CommodityBackend
+
             self.sensor_registry = SensorRegistry()
             detected = await self.sensor_registry.auto_detect()
+
             if detected:
+                # Build a CommodityBackend from the current collector
+                wifi_backend = CommodityBackend(
+                    self.collector, self.extractor, self.classifier
+                )
+                self._fusion_backend = MultiSensorBackend(
+                    wifi_backend, self.sensor_registry
+                )
+                caps = sorted(c.name for c in self._fusion_backend.get_capabilities())
                 print(f"  Phase A sensors: {', '.join(detected)}")
+                print(f"  Fusion capabilities: {', '.join(caps)}")
             else:
                 print("  Phase A sensors: none detected (WiFi-only mode)")
         except Exception as exc:
             logger.debug("Phase A sensor init skipped: %s", exc)
             self.sensor_registry = None
-
-    async def _read_sensors(self) -> Dict:
-        """Read all connected Phase A sensors, return dict of values."""
-        if not self.sensor_registry or not self.sensor_registry.sensors:
-            return {}
-        try:
-            readings = await self.sensor_registry.read_all()
-            return {sid: r.values for sid, r in readings.items()}
-        except Exception as exc:
-            logger.debug("Sensor read error: %s", exc)
-            return {}
 
     async def run(self) -> None:
         """Start the server and run until interrupted."""
@@ -528,9 +569,14 @@ class SensingWebSocketServer:
             self.collector.stop()
         # Shutdown Phase A sensors
         if self.sensor_registry:
-            asyncio.get_event_loop().run_until_complete(
-                self.sensor_registry.shutdown()
-            )
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(self.sensor_registry.shutdown())
+                else:
+                    loop.run_until_complete(self.sensor_registry.shutdown())
+            except RuntimeError:
+                pass
         logger.info("Sensing server stopped")
 
 
