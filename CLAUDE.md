@@ -56,8 +56,36 @@ All 5 ruvector crates integrated in workspace:
 - `ruvector-solver` → `subcarrier.rs` (sparse interpolation 114→56) + `triangulation.rs`
 - `ruvector-attention` → `model.rs` (apply_spatial_attention) + `bvp.rs`
 
+### Phase A Sensor Drivers (`v1/src/hardware/drivers/`)
+| Module | Sensor | Bus | Capabilities |
+|--------|--------|-----|-------------|
+| `ld2450.py` | HLK-LD2450 24 GHz | UART | Presence, distance, 3-target tracking |
+| `ens160.py` | ENS160 | I2C | TVOC, eCO2, AQI |
+| `amg8833.py` | AMG8833 Grid-EYE | I2C | 8x8 thermal grid, presence |
+| `bme688.py` | BME688 | I2C | Temp, humidity, pressure, gas resistance |
+| `mr60bha2.py` | MR60BHA2 60 GHz | UART | Heart rate, breathing, presence, distance |
+| `inmp441.py` | INMP441 MEMS mic | I2S | SPL (dB), raw PCM stream |
+| `simulated.py` | All 6 simulated | — | Realistic synthetic data for dev/testing |
+
+### Phase A Sensing Pipeline (`v1/src/sensing/`)
+| Module | Purpose |
+|--------|---------|
+| `multi_sensor_backend.py` | Fuses WiFi + Phase A into `FusedSensingResult` |
+| `alerts.py` | Configurable threshold rules (HR, CO2, noise, temp) |
+| `recorder.py` | JSONL recording and playback of fused sessions |
+| `csv_export.py` | Export recordings to 20-column CSV |
+
+### Sensor CLI Commands
+```bash
+sensor status              # Probe and list connected sensors
+sensor read <id>           # Read from a specific sensor
+sensor record <path>       # Record fused data to JSONL
+sensor play <path>         # Replay recording to stdout
+sensor export <path>       # Convert JSONL to CSV
+```
+
 ### Architecture Decisions
-80 ADRs in `docs/adr/` (ADR-001 through ADR-043). Key ones:
+81 ADRs in `docs/adr/` (ADR-001 through ADR-081). Key ones:
 - ADR-014: SOTA signal processing (Accepted)
 - ADR-015: MM-Fi + Wi-Pose training datasets (Accepted)
 - ADR-016: RuVector training pipeline integration (Accepted — complete)
@@ -69,6 +97,8 @@ All 5 ruvector crates integrated in workspace:
 - ADR-030: RuvSense persistent field model (Proposed)
 - ADR-031: RuView sensing-first RF mode (Proposed)
 - ADR-032: Multistatic mesh security hardening (Proposed)
+- ADR-063: 60 GHz mmWave sensor fusion (Proposed)
+- ADR-081: Phase A multi-modal sensor drivers (Accepted)
 
 ### Supported Hardware
 
@@ -93,8 +123,16 @@ cargo check -p wifi-densepose-train --no-default-features
 # Python — deterministic proof verification (SHA-256)
 python v1/data/proof/verify.py
 
-# Python — test suite
-cd v1 && python -m pytest tests/ -x -q
+# Python — test suite (592+ tests)
+cd v1 && python -m pytest tests/ -x -q -o "addopts="
+
+# Python — sensor simulation (no hardware needed)
+python -m v1.src.sensing.ws_server --simulate-sensors
+
+# Python — record/replay sensor data
+python -m v1.src.cli sensor record data/recordings/session.jsonl -d 30
+python -m v1.src.cli sensor play data/recordings/session.jsonl
+python -m v1.src.cli sensor export data/recordings/session.jsonl
 ```
 
 ### ESP32 Firmware Build (Windows — Python subprocess required)
