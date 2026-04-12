@@ -1,0 +1,34 @@
+# Phase A sensor driver dependencies (ADR-081)
+# Install: pip install -r requirements-sensors.txt
+#
+# These are OPTIONAL — the system runs in WiFi-only mode without them.
+# Each driver gracefully skips if its library is missing.
+
+# Core (always needed for any sensor)
+pyserial>=3.5,<4.0          # UART communication (LD2450, MR60BHA2)
+numpy>=1.24                  # Signal processing, audio SPL calc
+
+# LD2450 — 24 GHz radar (presence, distance, multi-target)
+# Uses pyserial directly, no extra package needed.
+# Library: csRon/HLK-LD2450 protocol implemented in drivers/ld2450.py
+
+# ENS160 — air quality (TVOC, eCO2, AQI)
+ens160>=0.1.0                # I2C via smbus2
+
+# AMG8833 — 8x8 thermal camera
+adafruit-circuitpython-amg88xx>=1.2,<2.0  # I2C via Blinka
+adafruit-blinka>=8.0                       # Linux/RPi GPIO abstraction
+
+# BME688 — temperature, humidity, pressure, gas
+bme68x>=1.0,<2.0            # pi3g official Bosch BSEC2 binding
+
+# MR60BHA2 — 60 GHz mmWave (heart rate, breathing, presence)
+# Uses pyserial directly, Seeed protocol implemented in drivers/mr60bha2.py
+
+# INMP441 — MEMS microphone
+# On MicroPython: uses machine.I2S (no pip install needed)
+# On CPython/Linux:
+sounddevice>=0.4,<1.0       # ALSA/PulseAudio I2S capture
+
+# Optional: for WebSocket server
+websockets>=12.0,<14.0
