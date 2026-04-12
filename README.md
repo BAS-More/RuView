@@ -1557,6 +1557,40 @@ See [ADR-014](docs/adr/ADR-014-sota-signal-processing.md) for full mathematical 
 
 ---
 
+## 🔌 Phase A Multi-Modal Sensors (ADR-081)
+
+Six commodity sensors fuse with WiFi CSI to create a multi-modal sensing platform:
+
+| Sensor | Bus | What It Measures | Cost | Library |
+|--------|-----|-----------------|------|---------|
+| **HLK-LD2450** | UART 256k | Presence, distance, 3-target tracking | ~$3 | pyserial |
+| **ENS160** | I2C | TVOC, eCO2, air quality index | ~$5 | ens160 |
+| **AMG8833** | I2C | 8x8 thermal camera, body heat detection | ~$15 | adafruit-amg88xx |
+| **BME688** | I2C | Temperature, humidity, pressure, VOC gas | ~$10 | bme68x (pi3g) |
+| **MR60BHA2** | UART 115200 | Heart rate, breathing rate (60 GHz mmWave) | ~$15 | pyserial |
+| **INMP441** | I2S | Sound pressure level, audio stream | ~$2 | sounddevice |
+
+**Total: ~$50 for the full sensor suite.**
+
+```bash
+# Install sensor dependencies
+pip install -r requirements-sensors.txt
+
+# Run with simulated sensors (no hardware needed)
+python -m v1.src.sensing.ws_server --simulate-sensors
+
+# Run with real hardware (auto-detects what's connected)
+python -m v1.src.sensing.ws_server
+
+# Record a session, export to CSV
+python -m v1.src.cli sensor record data/recordings/session.jsonl -d 60
+python -m v1.src.cli sensor export data/recordings/session.jsonl
+```
+
+The fusion engine combines all modalities — presence confirmed across WiFi + radar + thermal, vitals from mmWave, environment from BME688 + ENS160, audio from INMP441. When a sensor disconnects, the health monitor auto-reconnects with exponential backoff.
+
+---
+
 ## 🧠 Models & Training
 
 <details>
