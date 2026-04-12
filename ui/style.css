@@ -2073,6 +2073,40 @@ canvas {
   font-weight: var(--font-weight-medium);
 }
 
+/* ===== Fusion Panel ===== */
+
+.sensing-fusion-presence {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.sensing-fusion-presence .sensing-class-label {
+  font-size: 14px;
+}
+
+.sensing-fusion-vitals .sensing-detail-row span:last-child,
+.sensing-fusion-distance .sensing-detail-row span:last-child {
+  color: #32b8c6;
+}
+
+.sensing-fusion-env .sensing-detail-row span:last-child {
+  color: #8bc6a0;
+}
+
+.sensing-fusion-aq .sensing-detail-row span:last-child {
+  color: #c6a032;
+}
+
+.sensing-fusion-thermal .sensing-detail-row span:last-child {
+  color: #c65032;
+}
+
+.sensing-fusion-audio .sensing-detail-row span:last-child {
+  color: #a0a0c6;
+}
+
 /* ===== Training Tab Styles ===== */
 
 #training .tab-header {

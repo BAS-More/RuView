@@ -105,6 +105,76 @@ export class SensingTab {
             </div>
           </div>
 
+          <!-- Multi-Sensor Fusion (visible when fusion data arrives) -->
+          <div class="sensing-card" id="fusionPanel" style="display:none">
+            <div class="sensing-card-title">Multi-Sensor Fusion</div>
+            <div class="sensing-fusion-presence" id="fusionPresence">
+              <span class="sensing-class-label" id="fusionPresenceLabel">--</span>
+              <span class="sensing-meter-val" id="fusionConfidence">--</span>
+            </div>
+            <div class="sensing-details" id="fusionSources" style="font-size:11px;color:#888;margin-bottom:8px;"></div>
+
+            <!-- Vitals -->
+            <div class="sensing-fusion-vitals" id="fusionVitals" style="display:none">
+              <div class="sensing-detail-row">
+                <span>Heart Rate</span><span id="fusionHR">-- bpm</span>
+              </div>
+              <div class="sensing-detail-row">
+                <span>Breathing</span><span id="fusionBR">-- bpm</span>
+              </div>
+            </div>
+
+            <!-- Distance -->
+            <div class="sensing-fusion-distance" id="fusionDistance" style="display:none">
+              <div class="sensing-detail-row">
+                <span>Nearest</span><span id="fusionDist">-- mm</span>
+              </div>
+              <div class="sensing-detail-row">
+                <span>Targets</span><span id="fusionTargets">0</span>
+              </div>
+            </div>
+
+            <!-- Environment -->
+            <div class="sensing-fusion-env" id="fusionEnv" style="display:none">
+              <div class="sensing-detail-row">
+                <span>Temp</span><span id="fusionTemp">-- C</span>
+              </div>
+              <div class="sensing-detail-row">
+                <span>Humidity</span><span id="fusionHumidity">--%</span>
+              </div>
+              <div class="sensing-detail-row">
+                <span>Pressure</span><span id="fusionPressure">-- hPa</span>
+              </div>
+            </div>
+
+            <!-- Air Quality -->
+            <div class="sensing-fusion-aq" id="fusionAQ" style="display:none">
+              <div class="sensing-detail-row">
+                <span>TVOC</span><span id="fusionTVOC">-- ppb</span>
+              </div>
+              <div class="sensing-detail-row">
+                <span>eCO2</span><span id="fusionCO2">-- ppm</span>
+              </div>
+              <div class="sensing-detail-row">
+                <span>AQI</span><span id="fusionAQI">--</span>
+              </div>
+            </div>
+
+            <!-- Thermal -->
+            <div class="sensing-fusion-thermal" id="fusionThermal" style="display:none">
+              <div class="sensing-detail-row">
+                <span>Thermal Max</span><span id="fusionThermalMax">-- C</span>
+              </div>
+            </div>
+
+            <!-- Audio -->
+            <div class="sensing-fusion-audio" id="fusionAudio" style="display:none">
+              <div class="sensing-detail-row">
+                <span>Sound Level</span><span id="fusionSPL">-- dB</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Setup info -->
           <div class="sensing-card">
             <div class="sensing-card-title">About This Data</div>
@@ -199,6 +269,9 @@ export class SensingTab {
 
     // Update HUD
     this._updateHUD(data);
+
+    // Update multi-sensor fusion panel
+    this._updateFusionPanel(data);
 
     // Update per-node panels
     this._updateNodePanels(data);
@@ -321,6 +394,110 @@ export class SensingTab {
       else ctx.lineTo(x, y);
     }
     ctx.stroke();
+  }
+
+  // ---- Fusion panel -------------------------------------------------------
+
+  _updateFusionPanel(data) {
+    const f = data.fusion;
+    const panel = this.container.querySelector('#fusionPanel');
+    if (!panel) return;
+
+    if (!f) {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = '';
+
+    // Presence + confidence
+    const presLabel = this.container.querySelector('#fusionPresenceLabel');
+    if (presLabel) {
+      presLabel.textContent = f.presence ? 'PRESENT' : 'ABSENT';
+      presLabel.className = 'sensing-class-label ' + (f.presence ? 'active' : 'absent');
+    }
+    this._setText('fusionConfidence', ((f.fused_confidence || 0) * 100).toFixed(0) + '%');
+
+    // Sources
+    const srcEl = this.container.querySelector('#fusionSources');
+    if (srcEl) {
+      srcEl.textContent = (f.presence_sources || []).join(' + ') || 'none';
+    }
+
+    // Vitals
+    const vitals = this.container.querySelector('#fusionVitals');
+    if (vitals) {
+      if (f.heart_rate_bpm != null || f.breathing_rate_bpm != null) {
+        vitals.style.display = '';
+        this._setText('fusionHR', f.heart_rate_bpm != null ? f.heart_rate_bpm.toFixed(0) + ' bpm' : '--');
+        this._setText('fusionBR', f.breathing_rate_bpm != null ? f.breathing_rate_bpm.toFixed(1) + ' bpm' : '--');
+      } else {
+        vitals.style.display = 'none';
+      }
+    }
+
+    // Distance
+    const distEl = this.container.querySelector('#fusionDistance');
+    if (distEl) {
+      if (f.nearest_distance_mm != null) {
+        distEl.style.display = '';
+        this._setText('fusionDist', f.nearest_distance_mm + ' mm');
+        this._setText('fusionTargets', String(f.target_count || 0));
+      } else {
+        distEl.style.display = 'none';
+      }
+    }
+
+    // Environment
+    const envEl = this.container.querySelector('#fusionEnv');
+    if (envEl) {
+      const env = f.environment;
+      if (env) {
+        envEl.style.display = '';
+        this._setText('fusionTemp', (env.temperature_c || 0).toFixed(1) + ' C');
+        this._setText('fusionHumidity', (env.humidity_pct || 0).toFixed(0) + '%');
+        this._setText('fusionPressure', (env.pressure_hpa || 0).toFixed(0) + ' hPa');
+      } else {
+        envEl.style.display = 'none';
+      }
+    }
+
+    // Air quality
+    const aqEl = this.container.querySelector('#fusionAQ');
+    if (aqEl) {
+      const aq = f.air_quality;
+      if (aq) {
+        aqEl.style.display = '';
+        this._setText('fusionTVOC', (aq.tvoc_ppb || 0) + ' ppb');
+        this._setText('fusionCO2', (aq.eco2_ppm || 0) + ' ppm');
+        this._setText('fusionAQI', String(aq.aqi || '--'));
+      } else {
+        aqEl.style.display = 'none';
+      }
+    }
+
+    // Thermal
+    const thEl = this.container.querySelector('#fusionThermal');
+    if (thEl) {
+      const th = f.thermal;
+      if (th) {
+        thEl.style.display = '';
+        this._setText('fusionThermalMax', (th.max_c || 0).toFixed(1) + ' C');
+      } else {
+        thEl.style.display = 'none';
+      }
+    }
+
+    // Audio
+    const auEl = this.container.querySelector('#fusionAudio');
+    if (auEl) {
+      const au = f.audio;
+      if (au) {
+        auEl.style.display = '';
+        this._setText('fusionSPL', (au.db_spl || 0).toFixed(1) + ' dB');
+      } else {
+        auEl.style.display = 'none';
+      }
+    }
   }
 
   // ---- Per-node panels ---------------------------------------------------
