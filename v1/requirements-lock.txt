@@ -7,7 +7,7 @@
 # To update: change versions, run `python v1/data/proof/verify.py --generate-hash`,
 # then commit the new expected_features.sha256.
 
-numpy==1.26.4
+numpy==2.0.2
 scipy==1.14.1
 pydantic==2.10.4
 pydantic-settings==2.7.1
