@@ -18,6 +18,7 @@ uvicorn>=0.20.0
 websockets>=10.4
 pydantic>=2.5.0
 python-jose[cryptography]>=3.3.0
+ecdsa>=0.19.1                   # pin to fix CVE-2024-23342 (timing attack)
 python-multipart>=0.0.6
 passlib[bcrypt]>=1.7.4
 

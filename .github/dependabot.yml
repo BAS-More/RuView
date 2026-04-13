@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Rust dependencies
+  - package-ecosystem: "cargo"
+    directory: "/rust-port/wifi-densepose-rs"
+    schedule:
+      interval: "weekly"
+
+  # npm — desktop UI (our code)
+  - package-ecosystem: "npm"
+    directory: "/rust-port/wifi-densepose-rs/crates/wifi-densepose-desktop/ui"
+    schedule:
+      interval: "weekly"
+
+  # npm — mobile UI (our code)
+  - package-ecosystem: "npm"
+    directory: "/ui/mobile"
+    schedule:
+      interval: "weekly"
+
+  # Ignore vendor submodules — we don't control these repos
+  # vendor/ruvector -> github.com/ruvnet/ruvector
+  # vendor/midstream -> github.com/ruvnet/midstream
+  # vendor/sublinear-time-solver -> github.com/ruvnet/sublinear-time-solver

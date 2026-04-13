@@ -71,6 +71,7 @@ def get_requirements():
         "typer>=0.9.0",
         "python-multipart>=0.0.6",
         "python-jose[cryptography]>=3.3.0",
+        "ecdsa>=0.19.1",  # pin to fix CVE-2024-23342
         "passlib[bcrypt]>=1.7.4",
         "python-dotenv>=1.0.0",
         "pyyaml>=6.0",
