@@ -178,7 +178,7 @@ class TestInferenceSpeed:
         for name, result in results.items():
             assert result["inference_time_ms"] < 500  # Less than 500ms
     
-    @pytest.mark.xfail(reason="TDD: not yet implemented", strict=False)
+    @pytest.mark.xfail(reason="TDD: timing-dependent, passes intermittently", strict=False)
     @pytest.mark.asyncio
     async def test_batch_inference_performance_should_fail_initially(self, standard_model):
         """Test batch inference performance - should fail initially."""
