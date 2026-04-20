@@ -31,6 +31,7 @@ redis>=4.5.0
 # CLI dependencies
 click>=8.0.0
 alembic>=1.10.0
+Mako>=1.3.11                    # pin transitive alembic→Mako to fix CVE-2025-* (path traversal)
 
 # Hardware interface dependencies
 asyncio-mqtt>=0.11.0

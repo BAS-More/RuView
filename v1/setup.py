@@ -50,6 +50,7 @@ def get_requirements():
         "pydantic-settings>=2.1.0",
         "sqlalchemy>=2.0.0",
         "alembic>=1.13.0",
+        "Mako>=1.3.11",  # pin transitive alembic->Mako, path traversal fix
         "asyncpg>=0.29.0",
         "psycopg2-binary>=2.9.0",
         "redis>=5.0.0",
