@@ -16,31 +16,44 @@ licenses = [
   "BSD-3-Clause",
   "BSD 3-Clause License",
   "ISC License (ISCL)",
+  "ISC License (ISCL",
   "ISC",
   "Python Software Foundation License",
   "PSF-2.0",
   "The Unlicense (Unlicense)",
+  "The Unlicense (Unlicense",
   "Unlicense",
   "Mozilla Public License 2.0 (MPL 2.0)",
+  "Mozilla Public License 2.0 (MPL 2.0",
   "MPL-2.0",
   "Public Domain",
   "Zlib License",
   "Zlib",
   "Historical Permission Notice and Disclaimer (HPND)",
+  "Historical Permission Notice and Disclaimer (HPND",
   "HPND"
 ]
 
 [blocked]
+# Note: each verbose form ending in `)` also has a `)`-stripped variant
+# below because upstream validate-py-licenses.py does .strip("()") which
+# trims the trailing `)` before lookup. The parenless forms work around
+# that bug. See BAS-More/license-guards issue/PR for the upstream fix.
 licenses = [
   "GNU General Public License v1 (GPLv1)",
+  "GNU General Public License v1 (GPLv1",
   "GPL-1.0",
   "GNU General Public License v2 (GPLv2)",
+  "GNU General Public License v2 (GPLv2",
   "GPL-2.0",
   "GNU General Public License v3 (GPLv3)",
+  "GNU General Public License v3 (GPLv3",
   "GPL-3.0",
   "GNU General Public License (GPL)",
+  "GNU General Public License (GPL",
   "GNU Affero General Public License v3",
   "GNU Affero General Public License v3 or later (AGPLv3+)",
+  "GNU Affero General Public License v3 or later (AGPLv3+",
   "AGPL-3.0",
   "Server Side Public License",
   "SSPL-1.0",
@@ -50,15 +63,21 @@ licenses = [
 ]
 
 [review_required]
+# Same parenless-variant workaround as [blocked] for licenses ending in `)`.
 licenses = [
   "GNU Lesser General Public License v2 (LGPLv2)",
+  "GNU Lesser General Public License v2 (LGPLv2",
   "GNU Lesser General Public License v3 (LGPLv3)",
+  "GNU Lesser General Public License v3 (LGPLv3",
   "GNU Library or Lesser General Public License (LGPL)",
+  "GNU Library or Lesser General Public License (LGPL",
   "LGPL-2.1",
   "LGPL-3.0",
   "Eclipse Public License 2.0 (EPL-2.0)",
+  "Eclipse Public License 2.0 (EPL-2.0",
   "EPL-2.0",
   "Common Development and Distribution License 1.0 (CDDL-1.0)",
+  "Common Development and Distribution License 1.0 (CDDL-1.0",
   "CDDL-1.0",
   "Other/Proprietary License",
   "LicenseRef-NVIDIA-SOFTWARE-LICENSE",
