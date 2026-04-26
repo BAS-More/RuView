@@ -51,18 +51,13 @@ jobs:
         if: hashFiles('Cargo.toml') != ''
         uses: dtolnay/rust-toolchain@stable
 
-      # `actions/checkout` with a PAT secret — required because
-      # BAS-More/license-guards is a private sibling repo and the default
-      # GITHUB_TOKEN cannot fetch other private repos in the org.
-      # Set the secret once per consumer repo:
-      #   printf '%s' "$GH_TOKEN" | gh secret set LICENSE_GUARDS_PAT --repo BAS-More/<this-repo>
-      # PAT needs `repo:read` scope on BAS-More/license-guards only.
+      # BAS-More/license-guards is a public sibling repo of cross-product
+      # license-check scripts. No token needed.
       - name: Checkout license-guards
         uses: actions/checkout@v4
         with:
           repository: BAS-More/license-guards
           path: .license-guards-runtime
-          token: ${{ secrets.LICENSE_GUARDS_PAT }}
           persist-credentials: false
 
       - name: Run license check
