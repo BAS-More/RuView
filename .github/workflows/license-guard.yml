@@ -66,9 +66,21 @@ jobs:
       - name: Apply local license-guards overlay
         if: hashFiles('.license-guards/**/*.toml') != '' || hashFiles('.license-guards/**/*.json') != ''
         run: |
+          set -x
+          ls -la .license-guards/
           mkdir -p "${{ github.workspace }}/.license-guards-runtime/configs"
-          cp -f .license-guards/*.toml "${{ github.workspace }}/.license-guards-runtime/configs/" 2>/dev/null || true
-          cp -f .license-guards/.licensechecker.json "${{ github.workspace }}/.license-guards-runtime/configs/" 2>/dev/null || true
+          if compgen -G '.license-guards/*.toml' > /dev/null; then
+            cp -f .license-guards/*.toml "${{ github.workspace }}/.license-guards-runtime/configs/"
+          fi
+          if [ -f .license-guards/.licensechecker.json ]; then
+            cp -f .license-guards/.licensechecker.json "${{ github.workspace }}/.license-guards-runtime/configs/"
+          fi
+          echo "--- post-overlay configs/ ---"
+          ls -la "${{ github.workspace }}/.license-guards-runtime/configs/"
+          echo "--- pip-licenses.toml head ---"
+          head -5 "${{ github.workspace }}/.license-guards-runtime/configs/pip-licenses.toml"
+          echo "--- grep GPLv2 in active config ---"
+          grep -c "GPLv2" "${{ github.workspace }}/.license-guards-runtime/configs/pip-licenses.toml" || true
 
       - name: Run license check
         env:
