@@ -1,0 +1,83 @@
+# GitHub Actions workflow — license guard.
+# Drop into .github/workflows/ in any BAS-More product repo.
+# Fails CI on viral-license deps, EE/enterprise imports, or stale THIRD_PARTY_NOTICES.
+
+name: License Guard
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  schedule:
+    # Quarterly audit — first day of Jan/Apr/Jul/Oct at 02:00 UTC
+    - cron: '0 2 1 1,4,7,10 *'
+
+permissions:
+  contents: read
+
+jobs:
+  license-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Node
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Node deps
+        if: hashFiles('package.json') != ''
+        run: npm ci || npm install
+
+      - name: Set up Python
+        if: hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps
+        if: hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != ''
+        run: |
+          pip install --quiet pip-licenses tomli
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e . || true; fi
+
+      - name: Set up Rust
+        if: hashFiles('Cargo.toml') != ''
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Clone license-guards
+        run: git clone --depth 1 https://github.com/BAS-More/license-guards /tmp/license-guards
+
+      - name: Run license check
+        env:
+          GUARD_DIR: /tmp/license-guards
+        run: bash /tmp/license-guards/scripts/check-licenses.sh
+
+      - name: Run EE-path lint
+        env:
+          GUARD_DIR: /tmp/license-guards
+        run: bash /tmp/license-guards/scripts/check-ee-imports.sh
+
+      - name: Verify THIRD_PARTY_NOTICES.md is current
+        if: hashFiles('package.json') != ''
+        run: |
+          npx --yes license-checker --json --production --excludePrivatePackages \
+            | node /tmp/license-guards/scripts/gen-notices.mjs > NOTICES_NEW.md
+          if [ -f THIRD_PARTY_NOTICES.md ]; then
+            # Strip timestamps before diff (line 3 = "Generated: ...")
+            diff <(sed '3d' THIRD_PARTY_NOTICES.md) <(sed '3d' NOTICES_NEW.md) > diff.txt || {
+              echo "::error::THIRD_PARTY_NOTICES.md is stale. Run: npm run gen:notices"
+              cat diff.txt
+              exit 1
+            }
+          else
+            echo "::warning::THIRD_PARTY_NOTICES.md missing. Generating..."
+            mv NOTICES_NEW.md THIRD_PARTY_NOTICES.md
+            echo "Commit THIRD_PARTY_NOTICES.md to suppress this warning."
+          fi
