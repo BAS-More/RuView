@@ -141,6 +141,7 @@ jobs:
           snyk-results.sarif
 
   # Container security scanning
+  # Only run on schedule — no root Dockerfile; uses docker/Dockerfile.python
   container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest

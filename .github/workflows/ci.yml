@@ -36,6 +36,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        # Install extras not in requirements.txt but needed for imports during linting
         pip install black flake8 mypy bandit safety psutil structlog celery kombu pyserial scapy marshmallow jsonschema aiofiles rich typer
 
     - name: Code formatting check (Black)
@@ -110,6 +111,7 @@ jobs:
     - name: Run Rust tests
       working-directory: rust-port/wifi-densepose-rs
       run: cargo test --workspace --no-default-features
+      # TODO: remove continue-on-error once ort-sys CDN download is resolved in CI
       continue-on-error: true
 
   # Unit and Integration Tests
@@ -134,18 +136,21 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        # Install extras not in requirements.txt but needed for imports during test collection
         pip install pytest-cov pytest-xdist psutil structlog celery kombu pyserial scapy marshmallow jsonschema aiofiles rich typer
 
     - name: Run unit tests
       env:
         ENVIRONMENT: test
       run: |
+        # Override addopts to skip coverage collection and strict markers from pyproject.toml
         pytest v1/tests/unit/ -v -o "addopts=" --junitxml=junit.xml
 
     - name: Run integration tests
       env:
         ENVIRONMENT: test
       run: |
+        # Override addopts to skip coverage collection and strict markers from pyproject.toml
         pytest v1/tests/integration/ -v -o "addopts=" --junitxml=integration-junit.xml
 
     - name: Upload test results
