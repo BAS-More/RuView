@@ -67,15 +67,13 @@ licenses = [
   "UNKNOWN"
 ]
 
-# Per-package exemption — see BAS-More/license-guards#2 for the upstream
-# `[exempt_packages]` feature. Until that lands, this section is parsed but
-# ignored by `validate-py-licenses.py`; the CI failure on scapy persists.
-# Once #2 merges, scapy is waved through here without weakening the global
-# `[blocked]` list for any other GPLv2 dep that may sneak in.
+# Per-package exception — bypasses bucket checks for the named package.
+# Schema is `[exceptions]` table mapping `package_name -> reason` (a single
+# string). Reason is echoed in CI output for reviewer visibility.
+#
+# License-guards upstream switched from `[exempt_packages]` (#2 merged) to
+# `[exceptions]` in a follow-up; this section uses the current shape.
 #
 # Tracked in BAS-More/RuView#39.
-[exempt_packages]
-names = ["scapy"]
-
-[exempt_packages.reasons]
+[exceptions]
 scapy = "GPLv2 accepted: pure-Python protocol decoder used at the packet-parsing boundary; no static linking; the ruview tree is not redistributed under a viral-incompatible licence. Reviewed and accepted in BAS-More/RuView#39."
