@@ -1,0 +1,9 @@
+# Trivy ignore list — per-repo overrides for known false positives or
+# accepted risks. Add CVE IDs one per line. Document each entry below.
+#
+# Format:
+#   CVE-2024-XXXXX
+#
+# Example:
+#   # 2026-04-27 — accepted: only triggered by dev-only test fixture
+#   CVE-2024-12345
