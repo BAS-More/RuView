@@ -1,3 +1,16 @@
+> # 🔄 RENAMED → See Through
+>
+> This project has been renamed to **See Through** to distinguish from the
+> upstream [`ruvnet/RuView`](https://github.com/ruvnet/RuView) project from
+> which it was forked.
+>
+> **New home:** https://github.com/BAS-More/see-through
+>
+> No new commits will land here. Pending PRs will migrate to the new repo.
+> This repo will be archived after a 30-day transition window.
+
+---
+
 # π RuView
 
 <p align="center">
