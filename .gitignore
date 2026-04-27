@@ -251,3 +251,5 @@ v1/src/sensing/mac_wifi
 firmware/esp32-csi-node/build_firmware.bat
 data/processed/
 models/
+/tmp/lc.json
+licenses.json

@@ -1,0 +1,103 @@
+# GitHub Actions workflow — license guard.
+# Drop into .github/workflows/ in any BAS-More product repo.
+# Fails CI on viral-license deps, EE/enterprise imports, or stale THIRD_PARTY_NOTICES.
+
+name: License Guard
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  schedule:
+    # Quarterly audit — first day of Jan/Apr/Jul/Oct at 02:00 UTC
+    - cron: '0 2 1 1,4,7,10 *'
+
+permissions:
+  contents: read
+
+jobs:
+  license-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Node
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Node deps
+        if: hashFiles('package.json') != ''
+        run: npm ci || npm install
+
+      - name: Set up Python
+        if: hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps
+        if: hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != ''
+        run: |
+          pip install --quiet pip-licenses tomli
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e . || true; fi
+
+      - name: Set up Rust
+        if: hashFiles('Cargo.toml') != ''
+        uses: dtolnay/rust-toolchain@stable
+
+      # BAS-More/license-guards is a public sibling repo of cross-product
+      # license-check scripts. No token needed.
+      - name: Checkout license-guards
+        uses: actions/checkout@v4
+        with:
+          repository: BAS-More/license-guards
+          path: .license-guards-runtime
+          persist-credentials: false
+
+      # check-licenses.sh reads config from $GUARD_DIR/configs/. Override the
+      # cloned defaults with this repo's .license-guards/ overlay so per-repo
+      # allow/deny lists are respected.
+      - name: Apply local license-guards overlay
+        if: hashFiles('.license-guards/**/*.toml') != '' || hashFiles('.license-guards/**/*.json') != ''
+        run: |
+          mkdir -p "${{ github.workspace }}/.license-guards-runtime/configs"
+          if compgen -G '.license-guards/*.toml' > /dev/null; then
+            cp -f .license-guards/*.toml "${{ github.workspace }}/.license-guards-runtime/configs/"
+          fi
+          if [ -f .license-guards/.licensechecker.json ]; then
+            cp -f .license-guards/.licensechecker.json "${{ github.workspace }}/.license-guards-runtime/configs/"
+          fi
+
+      - name: Run license check
+        env:
+          GUARD_DIR: ${{ github.workspace }}/.license-guards-runtime
+        run: bash ${{ github.workspace }}/.license-guards-runtime/scripts/check-licenses.sh
+
+      - name: Run EE-path lint
+        env:
+          GUARD_DIR: ${{ github.workspace }}/.license-guards-runtime
+        run: bash ${{ github.workspace }}/.license-guards-runtime/scripts/check-ee-imports.sh
+
+      - name: Verify THIRD_PARTY_NOTICES.md is current
+        if: hashFiles('package.json') != ''
+        run: |
+          npx --yes license-checker --json --production --excludePrivatePackages \
+            | node ${{ github.workspace }}/.license-guards-runtime/scripts/gen-notices.mjs > NOTICES_NEW.md
+          if [ -f THIRD_PARTY_NOTICES.md ]; then
+            # Strip timestamps before diff (line 3 = "Generated: ...")
+            diff <(sed '3d' THIRD_PARTY_NOTICES.md) <(sed '3d' NOTICES_NEW.md) > diff.txt || {
+              echo "::error::THIRD_PARTY_NOTICES.md is stale. Run: npm run gen:notices"
+              cat diff.txt
+              exit 1
+            }
+          else
+            echo "::warning::THIRD_PARTY_NOTICES.md missing. Generating..."
+            mv NOTICES_NEW.md THIRD_PARTY_NOTICES.md
+            echo "Commit THIRD_PARTY_NOTICES.md to suppress this warning."
+          fi

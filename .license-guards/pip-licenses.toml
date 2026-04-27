@@ -1,0 +1,133 @@
+# pip-licenses config for Python projects.
+# Run: pip-licenses --format=json --with-license-file > licenses.json
+#      python scripts/validate-py-licenses.py licenses.json
+
+[allowed]
+licenses = [
+  "MIT License",
+  "MIT",
+  "MIT-CMU",
+  "Apache Software License",
+  "Apache License 2.0",
+  "Apache 2.0",
+  "Apache-2.0",
+  "BSD",
+  "BSD License",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSD 3-Clause License",
+  "0BSD",
+  "BSD Zero Clause License",
+  "ISC License (ISCL)",
+  "ISC",
+  "Python Software Foundation License",
+  "PSF-2.0",
+  "The Unlicense (Unlicense)",
+  "Unlicense",
+  "Mozilla Public License 2.0 (MPL 2.0)",
+  "MPL-2.0",
+  "Public Domain",
+  "CC0-1.0",
+  "Creative Commons Zero v1.0 Universal",
+  "Zlib License",
+  "Zlib",
+  "Historical Permission Notice and Disclaimer (HPND)",
+  "HPND"
+]
+
+[blocked]
+licenses = [
+  "GNU General Public License v1 (GPLv1)",
+  "GPL-1.0",
+  "GNU General Public License v2 (GPLv2)",
+  "GPL-2.0",
+  "GNU General Public License v3 (GPLv3)",
+  "GPL-3.0",
+  "GNU General Public License (GPL)",
+  "GNU Affero General Public License v3",
+  "GNU Affero General Public License v3 or later (AGPLv3+)",
+  "AGPL-3.0",
+  "Server Side Public License",
+  "SSPL-1.0",
+  "Business Source License 1.1",
+  "BUSL-1.1",
+  "Commons Clause"
+]
+
+[review_required]
+licenses = [
+  "GNU Lesser General Public License v2 (LGPLv2)",
+  "GNU Lesser General Public License v3 (LGPLv3)",
+  "GNU Library or Lesser General Public License (LGPL)",
+  "LGPL-2.1",
+  "LGPL-3.0",
+  "Eclipse Public License 2.0 (EPL-2.0)",
+  "EPL-2.0",
+  "Common Development and Distribution License 1.0 (CDDL-1.0)",
+  "CDDL-1.0",
+  "Other/Proprietary License",
+  "LicenseRef-NVIDIA-SOFTWARE-LICENSE",
+  "LicenseRef-NVIDIA-Proprietary",
+  "NVIDIA Proprietary Software",
+  "UNKNOWN"
+]
+
+# Per-package exemption — upstream feature shipped in BAS-More/license-guards#2.
+# Use this rather than weakening the global `[blocked]` / `[review_required]`
+# buckets when one specific dep needs a waiver.
+#
+# Tracked in BAS-More/RuView#39.
+[exempt_packages]
+names = [
+  # GPLv2 — accepted at packet-parsing boundary (see scapy reason below).
+  "scapy",
+
+  # NVIDIA proprietary stack — required transitively by torch/CUDA. Used as
+  # closed-source binary wheels; we redistribute nothing. Standard NVIDIA EULA
+  # applies for any end-user shipping. Reviewed in BAS-More/RuView#39.
+  "cuda-bindings",
+  "cuda-toolkit",
+  "nvidia-cublas",
+  "nvidia-cuda-cupti",
+  "nvidia-cuda-nvrtc",
+  "nvidia-cuda-runtime",
+  "nvidia-cudnn-cu13",
+  "nvidia-cufft",
+  "nvidia-cufile",
+  "nvidia-curand",
+  "nvidia-cusolver",
+  "nvidia-cusparse",
+  "nvidia-cusparselt-cu13",
+  "nvidia-nccl-cu13",
+  "nvidia-nvjitlink",
+  "nvidia-nvshmem-cu13",
+  "nvidia-nvtx",
+
+  # LGPL Python libs — used as dynamically-imported modules. No static
+  # linking, no modification of the libraries themselves. Project is not
+  # redistributed in a form that would invoke LGPL copyleft.
+  "paramiko",
+  "psycopg2-binary",
+]
+
+[exempt_packages.reasons]
+scapy = "GPLv2 accepted: pure-Python protocol decoder used at the packet-parsing boundary; no static linking; the ruview tree is not redistributed under a viral-incompatible licence. Reviewed and accepted in BAS-More/RuView#39."
+cuda-bindings = "NVIDIA proprietary, transitive dep of torch/CUDA stack. Binary-wheel use only; no redistribution. Reviewed in BAS-More/RuView#39."
+cuda-toolkit = "NVIDIA proprietary metapackage (license metadata reports UNKNOWN). Binary-wheel use only; no redistribution. Reviewed in BAS-More/RuView#39."
+nvidia-cublas = "NVIDIA proprietary CUDA runtime component. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cuda-cupti = "NVIDIA proprietary CUDA profiling component. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cuda-nvrtc = "NVIDIA proprietary CUDA runtime compiler. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cuda-runtime = "NVIDIA proprietary CUDA runtime. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cudnn-cu13 = "NVIDIA proprietary cuDNN library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cufft = "NVIDIA proprietary CUDA FFT library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cufile = "NVIDIA proprietary CUDA file I/O library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-curand = "NVIDIA proprietary CUDA RNG library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cusolver = "NVIDIA proprietary CUDA solver library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cusparse = "NVIDIA proprietary CUDA sparse-matrix library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-cusparselt-cu13 = "NVIDIA proprietary CUDA sparse-LT library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-nccl-cu13 = "NVIDIA proprietary collective-comms library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-nvjitlink = "NVIDIA proprietary JIT linker. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-nvshmem-cu13 = "NVIDIA proprietary multi-GPU memory library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+nvidia-nvtx = "NVIDIA proprietary tools-extension library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
+paramiko = "LGPL-2.1 accepted: dynamically-imported pure-Python SSH client; no modification, no static linking, no redistribution under viral-incompatible terms. Reviewed in BAS-More/RuView#39."
+psycopg2-binary = "LGPL accepted: dynamically-loaded Postgres driver; binary wheel; no modification or static linking. Reviewed in BAS-More/RuView#39."
