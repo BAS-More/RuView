@@ -2,7 +2,7 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ main, develop, 'feature/*', 'feat/*', 'hotfix/*', 'claude/*', 'security/*' ]
+    branches: [ main, develop, 'feature/*', 'feat/*', 'hotfix/*', 'claude/*', 'security/*', 'copilot/*' ]
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
