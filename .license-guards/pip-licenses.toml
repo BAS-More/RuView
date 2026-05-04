@@ -72,18 +72,46 @@ licenses = [
   "UNKNOWN"
 ]
 
-# Per-package exception — bypasses bucket checks for the named package.
-# Schema is `[exceptions]` table mapping `package_name -> reason` directly
-# (single string). Reason is echoed in CI output for reviewer visibility.
+# Per-package exemption — upstream feature shipped in
+# BAS-More/license-guards#2 (`[exempt_packages]` schema with `names` array
+# + `reasons` table).
 #
 # Tracked in BAS-More/RuView#39.
-[exceptions]
-# GPLv2 — accepted at packet-parsing boundary.
-scapy = "GPLv2 accepted: pure-Python protocol decoder used at the packet-parsing boundary; no static linking; the ruview tree is not redistributed under a viral-incompatible licence. Reviewed and accepted in BAS-More/RuView#39."
+[exempt_packages]
+names = [
+  # GPLv2 — accepted at packet-parsing boundary.
+  "scapy",
 
-# NVIDIA proprietary stack — required transitively by torch/CUDA. Used as
-# closed-source binary wheels; we redistribute nothing. Standard NVIDIA EULA
-# applies for any end-user shipping.
+  # NVIDIA proprietary stack — required transitively by torch/CUDA. Used as
+  # closed-source binary wheels; we redistribute nothing. Standard NVIDIA EULA
+  # applies for any end-user shipping.
+  "cuda-bindings",
+  "cuda-toolkit",
+  "nvidia-cublas",
+  "nvidia-cuda-cupti",
+  "nvidia-cuda-nvrtc",
+  "nvidia-cuda-runtime",
+  "nvidia-cudnn-cu13",
+  "nvidia-cufft",
+  "nvidia-cufile",
+  "nvidia-curand",
+  "nvidia-cusolver",
+  "nvidia-cusparse",
+  "nvidia-cusparselt-cu13",
+  "nvidia-nccl-cu13",
+  "nvidia-nvjitlink",
+  "nvidia-nvshmem-cu13",
+  "nvidia-nvtx",
+
+  # LGPL Python libs — dynamically-imported modules. No static linking, no
+  # modification of the libraries themselves. Project is not redistributed
+  # in a form that would invoke LGPL copyleft.
+  "paramiko",
+  "psycopg2-binary",
+]
+
+[exempt_packages.reasons]
+scapy = "GPLv2 accepted: pure-Python protocol decoder used at the packet-parsing boundary; no static linking; the ruview tree is not redistributed under a viral-incompatible licence. Reviewed and accepted in BAS-More/RuView#39."
 cuda-bindings = "NVIDIA proprietary, transitive dep of torch/CUDA stack. Binary-wheel use only; no redistribution. Reviewed in BAS-More/RuView#39."
 cuda-toolkit = "NVIDIA proprietary metapackage (license metadata reports UNKNOWN). Binary-wheel use only; no redistribution. Reviewed in BAS-More/RuView#39."
 nvidia-cublas = "NVIDIA proprietary CUDA runtime component. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
@@ -101,9 +129,5 @@ nvidia-nccl-cu13 = "NVIDIA proprietary collective-comms library. Binary-wheel us
 nvidia-nvjitlink = "NVIDIA proprietary JIT linker. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
 nvidia-nvshmem-cu13 = "NVIDIA proprietary multi-GPU memory library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
 nvidia-nvtx = "NVIDIA proprietary tools-extension library. Binary-wheel use only. Reviewed in BAS-More/RuView#39."
-
-# LGPL Python libs — used as dynamically-imported modules. No static linking,
-# no modification of the libraries themselves. Project is not redistributed
-# in a form that would invoke LGPL copyleft.
 paramiko = "LGPL-2.1 accepted: dynamically-imported pure-Python SSH client; no modification, no static linking, no redistribution under viral-incompatible terms. Reviewed in BAS-More/RuView#39."
 psycopg2-binary = "LGPL accepted: dynamically-loaded Postgres driver; binary wheel; no modification or static linking. Reviewed in BAS-More/RuView#39."
