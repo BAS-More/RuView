@@ -1,0 +1,88 @@
+id: ruview-oss-adoption
+title: "RuView — OSS Adoption Plan (BAS-More portfolio-roadmap)"
+status: active
+created: "2026-04-27"
+source:
+  portfolio_roadmap: "https://github.com/BAS-More/portfolio-roadmap"
+  project_plan: "https://github.com/BAS-More/portfolio-roadmap/blob/master/projects/RuView.md"
+  runbooks: "https://github.com/BAS-More/portfolio-roadmap/tree/master/runbooks/RuView"
+  clickup_list: "https://app.clickup.com/90161552087/v/l/li/901614664894"
+  product_repo: "https://github.com/BAS-More/RuView"
+
+description: "OSS adoption + license-clean modernization for RuView. Sources verdicts from the BAS-More 35-tool deep-dive matrix; tracks 6 execution phases, 6 remedial loops, and 7 success metrics."
+
+goals:
+  - "Replace any GPL-contaminated firmware path with permissive-only stack"
+  - "Replace Ultralytics YOLO (AGPL) with Apache-2.0 alternatives"
+  - "Resolve `RuView_Radar_Lite` IP exposure (decision: ally / cease-and-desist / ignore)"
+  - "Hit production-quality multi-node sync + on-device inference"
+  - "Ship RuView v1.0 commercial-ready before mid-2027 (moat window)"
+
+phases:
+  - id: phase-0
+    name: "Phase 0 — Audit"
+    effort: "3 days"
+    status: pending
+    completion: 0
+    todo_count: 5
+  - id: phase-1
+    name: "Phase 1 — Sprint 1 IP investigation"
+    effort: "3 days"
+    status: pending
+    completion: 0
+    todo_count: 5
+  - id: phase-2
+    name: "Phase 2 — Firmware migration"
+    effort: "3 weeks, Sprint 5"
+    status: pending
+    completion: 0
+    todo_count: 5
+  - id: phase-3
+    name: "Phase 3 — Training pipeline modernization"
+    effort: "2 weeks, Sprint 5"
+    status: pending
+    completion: 0
+    todo_count: 7
+  - id: phase-4
+    name: "Phase 4 — IP resolution"
+    effort: "1 week"
+    status: pending
+    completion: 0
+    todo_count: 4
+  - id: phase-5
+    name: "Phase 5 — Production readiness"
+    effort: "3 weeks"
+    status: pending
+    completion: 0
+    todo_count: 5
+
+success_metrics:
+  - metric: "GPL/AGPL deps in firmware"
+    target: "0"
+    actual: "TBD"
+  - metric: "AGPL deps in training pipeline"
+    target: "0"
+    actual: "TBD"
+  - metric: "PCK@20 (camera-validated)"
+    target: "≥ 92.9% (no regression)"
+    actual: "TBD"
+  - metric: "ESP32 inference latency"
+    target: "≤ 150ms per frame"
+    actual: "TBD"
+  - metric: "Tensor arena size"
+    target: "≤ 300 KB"
+    actual: "TBD"
+  - metric: "Multi-node sync drift"
+    target: "≤ 50ms"
+    actual: "TBD"
+  - metric: "Production deployment count"
+    target: "≥ 3 customers by Q2 2027"
+    actual: "TBD"
+
+compliance:
+  license_guards_enforced: true
+  forbidden_paths: ["**/ee/**", "**/enterprise/**"]
+  blocked_licenses: ["GPL-1.0", "GPL-2.0", "GPL-3.0", "AGPL-1.0", "AGPL-3.0", "SSPL-1.0", "BUSL-1.1"]
+
+remedial_loops_count: 6
+timeline_estimate: "12 weeks across Phase 0-5. Sprint 5 captures Phases 2-4."
